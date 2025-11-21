@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.kingpixel.cobblemonpatches.mixins",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "PokemonMixin",
+    "battles.BattleRegistryMixin",
+    "battles.PokemonBattleMixin",
+    "pc.PCBoxMixin",
+    "pc.PCStorageMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

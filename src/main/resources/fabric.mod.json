@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "cobblemonpatches",
+  "version": "${version}",
+  "name": "CobblemonPatches",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/cobblemonpatches/icon.png",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "org.kingpixel.cobblemonpatches.CobblemonPatches"
+    ]
+  },
+  "mixins": [
+    "cobblemonpatches.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
