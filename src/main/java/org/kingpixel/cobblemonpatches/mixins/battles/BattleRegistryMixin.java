@@ -55,8 +55,8 @@ abstract class BattleRegistryMixin {
   }
 
   @Inject(method = "startBattle", at = @At("RETURN"))
-  private void onStartBattle(BattleFormat format, BattleSide side1, BattleSide side2,
-                             boolean canPreempt, CallbackInfoReturnable<BattleStartResult> cir) {
+  private static void onStartBattle(BattleFormat format, BattleSide side1, BattleSide side2,
+                                    boolean canPreempt, CallbackInfoReturnable<BattleStartResult> cir) {
     BattleStartResult result = cir.getReturnValue();
     if (result != null) {
       updateCachesForSide(side1, result);
@@ -65,7 +65,7 @@ abstract class BattleRegistryMixin {
   }
 
   @Inject(method = "closeBattle", at = @At("HEAD"))
-  private void onCloseBattle(PokemonBattle battle, CallbackInfo ci) {
+  private static void onCloseBattle(PokemonBattle battle, CallbackInfo ci) {
     if (battle == null) return;
     UUID battleId = battle.getBattleId();
     ACTIVE_BATTLES.remove(battleId);
@@ -86,19 +86,19 @@ abstract class BattleRegistryMixin {
   // ============================
 
   @Inject(method = "getBattle", at = @At("HEAD"), cancellable = true)
-  private void onGetBattle(UUID id, CallbackInfoReturnable<PokemonBattle> cir) {
+  private static void onGetBattle(UUID id, CallbackInfoReturnable<PokemonBattle> cir) {
     Optional.ofNullable(ACTIVE_BATTLES.get(id)).ifPresent(cir::setReturnValue);
   }
 
   @Inject(method = "getBattleByParticipatingPlayer", at = @At("HEAD"), cancellable = true)
-  private void onGetBattleByPlayer(ServerPlayerEntity player, CallbackInfoReturnable<PokemonBattle> cir) {
+  private static void onGetBattleByPlayer(ServerPlayerEntity player, CallbackInfoReturnable<PokemonBattle> cir) {
     if (player != null) {
       Optional.ofNullable(PLAYER_BATTLES.get(player.getUuid())).ifPresent(cir::setReturnValue);
     }
   }
 
   @Inject(method = "getBattleByParticipatingPlayerId", at = @At("HEAD"), cancellable = true)
-  private void onGetBattleByPlayerId(UUID playerId, CallbackInfoReturnable<PokemonBattle> cir) {
+  private static void onGetBattleByPlayerId(UUID playerId, CallbackInfoReturnable<PokemonBattle> cir) {
     Optional.ofNullable(PLAYER_BATTLES.get(playerId)).ifPresent(cir::setReturnValue);
   }
 
@@ -107,7 +107,7 @@ abstract class BattleRegistryMixin {
   // ============================
 
   @Unique
-  private void updateCachesForSide(BattleSide side, BattleStartResult result) {
+  private static void updateCachesForSide(BattleSide side, BattleStartResult result) {
     result.ifSuccessful(battle -> {
       for (BattleActor actor : side.getActors()) {
         if (actor instanceof PlayerBattleActor playerActor) {
