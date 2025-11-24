@@ -4,7 +4,24 @@
   "version": "${version}",
   "name": "CobblemonPatches",
   "description": "",
-  "authors": [],
+  "authors": [
+    {
+      "name": "zonary123",
+      "contact": {
+        "role": "developer",
+        "homepage": "https://github.com/zonary123"
+      }
+    }
+  ],
+  "contributors": [
+    {
+      "name": "example",
+      "contact": {
+        "role": "contributor",
+        "homepage": "https://github.com/example"
+      }
+    }
+  ],
   "contact": {},
   "license": "All-Rights-Reserved",
   "icon": "assets/cobblemonpatches/icon.png",

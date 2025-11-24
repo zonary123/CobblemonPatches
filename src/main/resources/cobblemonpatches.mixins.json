@@ -7,8 +7,10 @@
     "PokemonMixin",
     "battles.BattleRegistryMixin",
     "battles.PokemonBattleMixin",
-    "pc.PCBoxMixin",
-    "pc.PCStorageMixin"
+    "berry.BerryBlockEntityMixin",
+    "berry.BerryBlockMixin",
+    "storage.PCBoxMixin",
+    "storage.PCStorageMixin"
   ],
   "injectors": {
     "defaultRequire": 1
