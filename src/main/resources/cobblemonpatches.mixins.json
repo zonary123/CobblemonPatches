@@ -10,7 +10,8 @@
     "berry.BerryBlockEntityMixin",
     "berry.BerryBlockMixin",
     "storage.PCBoxMixin",
-    "storage.PCStorageMixin"
+    "storage.PCStorageMixin",
+    "things.SentOutStateMixin"
   ],
   "injectors": {
     "defaultRequire": 1
