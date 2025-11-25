@@ -5,7 +5,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
-import org.kingpixel.cobblemonpatches.CobblemonPatches;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -34,8 +33,6 @@ public abstract class EntityMixin {
     if (self.getWorld() instanceof ServerWorld && self.isPlayer()) {
       ServerCommandSource result = cir.getReturnValue();
       COMMAND_SOURCE_CACHE.put(self, result);
-      CobblemonPatches.LOGGER.info("Cached ServerCommandSource for entity: " + self.getUuidAsString() + " | Cache " +
-        "size: " + COMMAND_SOURCE_CACHE.estimatedSize());
     }
   }
 
