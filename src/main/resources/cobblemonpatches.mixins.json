@@ -9,8 +9,12 @@
     "battles.PokemonBattleMixin",
     "berry.BerryBlockEntityMixin",
     "berry.BerryBlockMixin",
+    "entity.EntityMixin",
+    "entity.ServerCommandSourceMixin",
     "storage.PCBoxMixin",
     "storage.PCStorageMixin",
+    "storage.PokemonStoreMixin",
+    "things.SaccharineTreeFeatureMixin",
     "things.SentOutStateMixin"
   ],
   "injectors": {
