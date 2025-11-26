@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "PokemonMixin",
+    "SpeciesMixin",
     "battles.BattleRegistryMixin",
     "battles.PokemonBattleMixin",
     "berry.BerryBlockEntityMixin",
