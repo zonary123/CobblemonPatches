@@ -1,4 +1,4 @@
-package org.kingpixel.cobblemonpatches.mixins.riding;
+package org.kingpixel.cobblemonpatches.mixins.network;
 
 import com.cobblemon.mod.common.net.messages.server.pokemon.update.ServerboundUpdateRidingStatePacket;
 import com.cobblemon.mod.common.net.serverhandling.pokemon.update.ServerboundUpdateRidingStateHandler;

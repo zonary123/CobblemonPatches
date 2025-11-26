@@ -13,7 +13,7 @@
     "entity.EntityMixin",
     "entity.ServerCommandSourceMixin",
     "network.ChallengeHandlerMixin",
-    "riding.ServerboundUpdateRidingStateHandlerMixin",
+    "network.ServerboundUpdateRidingStateHandlerMixin",
     "storage.PCBoxMixin",
     "storage.PCStorageMixin",
     "storage.PokemonStoreMixin",
