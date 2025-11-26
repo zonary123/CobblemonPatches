@@ -12,6 +12,7 @@
     "berry.BerryBlockMixin",
     "entity.EntityMixin",
     "entity.ServerCommandSourceMixin",
+    "riding.ServerboundUpdateRidingStateHandlerMixin",
     "storage.PCBoxMixin",
     "storage.PCStorageMixin",
     "storage.PokemonStoreMixin",
