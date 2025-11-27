@@ -1,6 +1,7 @@
 package org.kingpixel.cobblemonpatches.mixins.things;
 
 import com.cobblemon.mod.common.world.feature.SaccharineTreeFeature;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.block.entity.BeehiveBlockEntity;
@@ -16,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.At;
 @Mixin(value = SaccharineTreeFeature.class, remap = false)
 public abstract class SaccharineTreeFeatureMixin {
 
-  @Unique @WrapOperation(
+  @WrapOperation(
     method = "populateBeeNest$lambda$0",
     at = @At(
       value = "INVOKE",
@@ -28,7 +29,11 @@ public abstract class SaccharineTreeFeatureMixin {
     BeehiveBlockEntity.BeeData bee,
     Operation<Void> original
   ) {
-    CobblemonPatches.server.executeSync(() -> original.call(hive, bee));
+    if (!CobblemonPatches.server.isOnThread()){
+      CobblemonPatches.server.execute(() ->  original.call(hive, bee));
+      return;
+    }
+    original.call(hive, bee);
   }
 }
 
