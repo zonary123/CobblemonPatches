@@ -17,7 +17,7 @@ public abstract class SentOutStateMixin {
   @Inject(method = "recall", at = @At("HEAD"), cancellable = true)
   private void onRecallHead(CallbackInfo ci) {
     SentOutState thisState = (SentOutState) (Object) this;
-    CobblemonPatches.server.executeSync(() -> {
+    CobblemonPatches.server.execute(() -> {
       var entity = thisState.getEntity();
       if (entity == null) return;
       entity.discard();
