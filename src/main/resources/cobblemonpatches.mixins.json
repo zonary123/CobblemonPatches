@@ -10,6 +10,7 @@
     "battles.PokemonBattleMixin",
     "berry.BerryBlockEntityMixin",
     "berry.BerryBlockMixin",
+    "blockentity.PokemonPastureBlockEntityTetheringMixin",
     "entity.EntityMixin",
     "entity.ServerCommandSourceMixin",
     "network.ChallengeHandlerMixin",
