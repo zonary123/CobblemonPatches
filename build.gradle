@@ -64,7 +64,7 @@ dependencies {
   modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
   modImplementation("com.cobblemon:fabric:${property("cobblemon_version")}")
   modImplementation("net.fabricmc:fabric-language-kotlin:1.12.3+kotlin.2.0.21")
-
+  implementation("com.github.ben-manes.caffeine:caffeine:3.2.3")
 }
 
 processResources {
