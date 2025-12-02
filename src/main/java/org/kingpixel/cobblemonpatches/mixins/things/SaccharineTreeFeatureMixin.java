@@ -26,8 +26,9 @@ public abstract class SaccharineTreeFeatureMixin {
   private static void wrapAddBee(
     BeehiveBlockEntity instance, Entity entity, Operation<Void> original
   ) {
-    if (!CobblemonPatches.server.isOnThread()){
-      CobblemonPatches.server.execute(() ->  original.call(instance, entity));
+    if (CobblemonPatches.server == null) return;
+    if (!CobblemonPatches.server.isOnThread()) {
+      CobblemonPatches.server.execute(() -> original.call(instance, entity));
       return;
     }
     original.call(instance, entity);
