@@ -3,6 +3,8 @@ package org.kingpixel.cobblemonpatches.mixins.storage;
 import com.cobblemon.mod.common.api.storage.PokemonStore;
 import com.cobblemon.mod.common.api.storage.StorePosition;
 import com.cobblemon.mod.common.pokemon.Pokemon;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -36,14 +38,9 @@ public abstract class PokemonStoreMixin<T extends StorePosition> {
   // -----------------------------------------------------------
   // 4. Reemplazar get(UUID) por acceso O(1)
   // -----------------------------------------------------------
-  @Inject(method = "get(Ljava/util/UUID;)Lcom/cobblemon/mod/common/pokemon/Pokemon;",
-          at = @At("HEAD"), cancellable = true)
-  private void cobblemon$optimizedGet(UUID uuid, CallbackInfoReturnable<Pokemon> cir) {
-    Pokemon pkm = cobblemon$uuidIndex.get(uuid);
-    if (pkm != null) {
-      cir.setReturnValue(pkm);
-    }
-    // Si no está, permite fallback al .find{} original
+  @WrapMethod(method = "get(Ljava/util/UUID;)Lcom/cobblemon/mod/common/pokemon/Pokemon;")
+  private Pokemon cobblemon$optimizedGet(UUID uuid, Operation<Pokemon> original) {
+    return cobblemon$uuidIndex.computeIfAbsent(uuid, original::call);
   }
 }
 
