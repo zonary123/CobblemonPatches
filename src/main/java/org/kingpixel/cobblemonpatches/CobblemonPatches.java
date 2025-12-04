@@ -13,12 +13,12 @@ public class CobblemonPatches implements ModInitializer {
   @Override
   public void onInitialize() {
     LOGGER.info("""
-
-    🛠️ Cobblemon Patches mod initialized.
-    ⚡ All optimizations and patches are now active.");
-    🔑 Caching for showdownId() is enabled.");
-    📦 PCBox and PCStore iterator optimizations are active.");
-    ⚔️ Optimizations for PokemonBattle's isPvN(), isPvP(), and isPvW() are enabled.""");
+      🛠️ Cobblemon Patches mod initialized.
+      ⚡ All optimizations and patches are now active.
+      🔑 Caching for showdownId() is enabled.
+      📦 PCBox and PCStore iterator optimizations are active.
+      ⚔️ Optimizations for PokemonBattle's isPvN(), isPvP(), and isPvW() are enabled.
+      """);
     events();
   }
 
