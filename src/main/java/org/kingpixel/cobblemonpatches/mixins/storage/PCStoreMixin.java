@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 @Mixin(value = PCStore.class, remap = false)
-public abstract class PCStorageMixin extends PokemonStore<PCPosition> {
+public abstract class PCStoreMixin extends PokemonStore<PCPosition> {
 
   @Shadow @Final
   private List<PCBox> boxes;

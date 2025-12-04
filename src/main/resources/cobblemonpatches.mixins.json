@@ -16,7 +16,7 @@
     "network.ChallengeHandlerMixin",
     "network.ServerboundUpdateRidingStateHandlerMixin",
     "storage.PCBoxMixin",
-    "storage.PCStorageMixin",
+    "storage.PCStoreMixin",
     "storage.PokemonStoreMixin",
     "things.SaccharineTreeFeatureMixin",
     "things.SentOutStateMixin"
