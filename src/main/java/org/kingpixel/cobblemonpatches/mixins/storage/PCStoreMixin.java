@@ -30,18 +30,15 @@ public abstract class PCStoreMixin extends PokemonStore<PCPosition> {
   @Override
   public Iterator<Pokemon> iterator() {
     return new Iterator<>() {
-      private final Iterator<PCBox> boxIterator = boxes.iterator();
+      private final Iterator<PCBox> boxesIterator = boxes.iterator();
       private Iterator<Pokemon> pokemonIterator = EMPTY;
 
       @Override
       public boolean hasNext() {
-        if (pokemonIterator.hasNext()) return true;
-
-        while (boxIterator.hasNext()) {
-          pokemonIterator = boxIterator.next().iterator();
-          if (pokemonIterator.hasNext()) return true;
+        while (!pokemonIterator.hasNext() && boxesIterator.hasNext()) {
+          pokemonIterator = boxesIterator.next().iterator();
         }
-        return false;
+        return pokemonIterator.hasNext();
       }
 
       @Override
