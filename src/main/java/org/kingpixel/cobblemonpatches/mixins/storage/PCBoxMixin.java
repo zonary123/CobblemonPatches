@@ -19,6 +19,10 @@ public abstract class PCBoxMixin implements Iterable<Pokemon> {
   @Final
   private Pokemon[] pokemon;
 
+  /**
+   * @author
+   * @reason
+   */
   @Overwrite
   @Override
   @NotNull
