@@ -42,7 +42,7 @@ import static com.cobblemon.mod.common.util.LocalizationUtilsKt.battleLang;
  * <p>
  * Autor: Carlos Varas Alonso - 27/10/2025
  */
-@Mixin(PokemonBattle.class)
+@Mixin(value = PokemonBattle.class, remap = false)
 public abstract class PokemonBattleMixin {
 
   // === CAMPOS CACHÉ ===

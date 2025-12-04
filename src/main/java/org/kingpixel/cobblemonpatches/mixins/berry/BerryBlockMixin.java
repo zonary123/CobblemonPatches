@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * @author Carlos Varas Alonso - 23/11/2025 22:13
  */
-@Mixin(BerryBlock.class)
+@Mixin(value = BerryBlock.class, remap = false)
 public abstract class BerryBlockMixin {
   @Final @Shadow private Identifier berryIdentifier;
   @Unique private Berry berry;

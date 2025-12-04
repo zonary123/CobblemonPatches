@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author Carlos Varas Alonso - Optimizado 27/10/2025
  */
-@Mixin(BattleRegistry.class)
+@Mixin(value = BattleRegistry.class, remap = false)
 abstract class BattleRegistryMixin {
 
   /**
