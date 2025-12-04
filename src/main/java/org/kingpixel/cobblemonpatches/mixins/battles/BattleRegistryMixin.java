@@ -45,10 +45,6 @@ abstract class BattleRegistryMixin {
    */
   @Unique private static final Map<UUID, UUID> PLAYER_TO_BATTLE_ID = new ConcurrentHashMap<>();
 
-  // ============================
-  // EVENTOS DE VIDA DE BATALLA
-  // ============================
-
   @Inject(method = "onPlayerDisconnect", at = @At("HEAD"))
   private void onPlayerDisconnect(ServerPlayerEntity player, CallbackInfo ci) {
     removePlayerFromCaches(player.getUuid());
@@ -70,7 +66,6 @@ abstract class BattleRegistryMixin {
     UUID battleId = battle.getBattleId();
     ACTIVE_BATTLES.remove(battleId);
 
-    // Limpieza de todos los jugadores involucrados
     PLAYER_TO_BATTLE_ID.entrySet().removeIf(entry -> {
       if (entry.getValue().equals(battleId)) {
         UUID playerId = entry.getKey();
@@ -80,10 +75,6 @@ abstract class BattleRegistryMixin {
       return false;
     });
   }
-
-  // ============================
-  // CACHÉ / OPTIMIZACIONES
-  // ============================
 
   @Inject(method = "getBattle", at = @At("HEAD"), cancellable = true)
   private static void onGetBattle(UUID id, CallbackInfoReturnable<PokemonBattle> cir) {
@@ -101,10 +92,6 @@ abstract class BattleRegistryMixin {
   private static void onGetBattleByPlayerId(UUID playerId, CallbackInfoReturnable<PokemonBattle> cir) {
     Optional.ofNullable(PLAYER_BATTLES.get(playerId)).ifPresent(cir::setReturnValue);
   }
-
-  // ============================
-  // MÉTODOS AUXILIARES
-  // ============================
 
   @Unique
   private static void updateCachesForSide(BattleSide side, BattleStartResult result) {

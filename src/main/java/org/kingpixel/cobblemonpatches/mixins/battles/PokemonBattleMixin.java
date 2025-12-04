@@ -37,15 +37,13 @@ import java.util.UUID;
 import static com.cobblemon.mod.common.util.LocalizationUtilsKt.battleLang;
 
 /**
- * Optimización de PokemonBattle sin uso de Streams, lambdas ni objetos temporales.
- * Baja presión de GC, acceso directo y caché inteligente.
+ * Pokémon Battle optimization without the use of Streams, lambdas, or temporary objects.
+ * Reduces GC pressure, direct access, and intelligent caching.
  * <p>
- * Autor: Carlos Varas Alonso - 27/10/2025
+ * Author: Carlos Varas Alonso - 27/10/2025
  */
 @Mixin(value = PokemonBattle.class, remap = false)
 public abstract class PokemonBattleMixin {
-
-  // === CAMPOS CACHÉ ===
   @Unique private List<BattleSide> cachedSides;
   @Unique private List<BattleActor> cachedActors;
   @Unique private List<ActiveBattlePokemon> cachedActivePokemon;
@@ -53,7 +51,6 @@ public abstract class PokemonBattleMixin {
   @Unique private List<ServerPlayerEntity> cachedPlayers;
   @Unique private boolean cacheDirty = true;
 
-  // === MÉTODOS PARA INVALIDAR LA CACHÉ ===
   @Unique
   private void invalidateCache() {
     cacheDirty = true;
@@ -64,7 +61,6 @@ public abstract class PokemonBattleMixin {
     cachedPlayers = null;
   }
 
-  // --- Métodos auxiliares internos ---
   @Unique
   private List<BattleSide> computeSides() {
     PokemonBattle self = (PokemonBattle) (Object) this;
@@ -120,7 +116,6 @@ public abstract class PokemonBattleMixin {
     return result;
   }
 
-  // === SIDES ===
   @Inject(method = "getSides", at = @At("HEAD"), cancellable = true)
   private void optimizeGetSides(CallbackInfoReturnable<Iterable<BattleSide>> cir) {
     if (!cacheDirty && cachedSides != null) {
@@ -133,7 +128,6 @@ public abstract class PokemonBattleMixin {
     cir.cancel();
   }
 
-  // === ACTORS ===
   @Inject(method = "getActors", at = @At("HEAD"), cancellable = true)
   private void optimizeGetActors(CallbackInfoReturnable<Iterable<BattleActor>> cir) {
     if (!cacheDirty && cachedActors != null) {
@@ -146,7 +140,6 @@ public abstract class PokemonBattleMixin {
     cir.cancel();
   }
 
-  // === ACTIVE POKEMON ===
   @Inject(method = "getActivePokemon", at = @At("HEAD"), cancellable = true)
   private void optimizeActivePokemon(CallbackInfoReturnable<Iterable<ActiveBattlePokemon>> cir) {
     if (!cacheDirty && cachedActivePokemon != null) {
@@ -159,7 +152,6 @@ public abstract class PokemonBattleMixin {
     cir.cancel();
   }
 
-  // === PLAYER UUIDS ===
   @Inject(method = "getPlayerUUIDs", at = @At("HEAD"), cancellable = true)
   private void optimizePlayerUUIDs(CallbackInfoReturnable<Iterable<UUID>> cir) {
     if (!cacheDirty && cachedPlayerUUIDs != null) {
@@ -172,7 +164,6 @@ public abstract class PokemonBattleMixin {
     cir.cancel();
   }
 
-  // === PLAYERS ===
   @Inject(method = "getPlayers", at = @At("HEAD"), cancellable = true)
   private void optimizePlayers(CallbackInfoReturnable<Iterable<ServerPlayerEntity>> cir) {
     if (!cacheDirty && cachedPlayers != null) {
@@ -185,7 +176,6 @@ public abstract class PokemonBattleMixin {
     cir.cancel();
   }
 
-  // === isPvN ===
   @Unique private Boolean isPvNCache = null;
 
   @Inject(method = "isPvN", at = @At("HEAD"), cancellable = true)
@@ -201,7 +191,6 @@ public abstract class PokemonBattleMixin {
     isPvNCache = cir.getReturnValue();
   }
 
-  // === isPvP ===
   @Unique private Boolean isPvPCache = null;
 
   @Inject(method = "isPvP", at = @At("HEAD"), cancellable = true)
@@ -217,7 +206,6 @@ public abstract class PokemonBattleMixin {
     isPvPCache = cir.getReturnValue();
   }
 
-  // === isPvW ===
   @Unique private Boolean isPvWCache = null;
 
   @Inject(method = "isPvW", at = @At("HEAD"), cancellable = true)
@@ -255,8 +243,6 @@ public abstract class PokemonBattleMixin {
       self.stop();
     }
   }
-
-  // === Métodos auxiliares privados ===
 
   @Unique private void collectActors(Iterable<BattleActor> allActors,
                                      List<FleeableBattleActor> fleeableActors,

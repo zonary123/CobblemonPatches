@@ -8,8 +8,13 @@
 
 ### Bug Fixes
 
-- N/A
+- **SaccharineTreeFeature**: Now no longer crashes when removing an entity asynchronously.
 
 ### Optimizations
 
-- N/A
+- **PastureBlocks**: The tick is now optimized to avoid iterating over the entire PC. The PC position is now cached for
+  better performance.
+- **ShowdownId**: Now cached for faster access.
+- **Berry**: **BerryBlockEntity** no longer searches in a HashMap for a specific Berry type. The type of berry is now
+  cached.
+- **PC**: Now avoids duplicating `ArrayList`. Iterates using an iterator for better efficiency.

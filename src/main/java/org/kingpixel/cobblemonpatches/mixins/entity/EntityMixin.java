@@ -36,7 +36,6 @@ public abstract class EntityMixin {
     }
   }
 
-  // Mixin separado para leer de la cache
   @Inject(method = "getCommandSource", at = @At("HEAD"), cancellable = true)
   private void EntityMixin$getCachedCommandSource(CallbackInfoReturnable<ServerCommandSource> cir) {
     Entity self = (Entity) (Object) this;
