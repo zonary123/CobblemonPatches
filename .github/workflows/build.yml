@@ -68,7 +68,7 @@ jobs:
 
           # Generar JSON embed correctamente escapado
           JSON_PAYLOAD=$(jq -nc --arg tag "$TAG" --arg changelog "$CHANGELOG_CONTENT" \
-            '{content: "@everyone 🎉 New Release!\nGitHub: https://github.com/zonary123/CobblemonPatches",
+            '{content: "@everyone 🎉 New Release!\n[GitHub](https://github.com/zonary123/CobblemonPatches)",
           embeds:[{title:("Release "+$tag), description:$changelog,
           color:3066993}]}')
 
