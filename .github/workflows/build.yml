@@ -68,7 +68,15 @@ jobs:
 
           # Generar JSON embed correctamente escapado
           JSON_PAYLOAD=$(jq -nc --arg tag "$TAG" --arg changelog "$CHANGELOG_CONTENT" \
-            '{content: "@everyone 🎉 New Release!\n[GitHub](https://github.com/zonary123/CobblemonPatches)",
+            '{content: "@everyone 🎉 New Release!
+            \n[GitHub](<https://github.com/zonary123/CobblemonPatches>)
+            \nHere you have a list of optimization mods. It is recommended to have them on the server.
+            \n[ScalableLux](<https://modrinth.com/mod/scalablelux>)
+            \n[Lithium](<https://modrinth.com/mod/lithium>)
+            \n[Krypton](<https://modrinth.com/mod/krypton>)
+            \n[Alternate Current](<https://modrinth.com/mod/alternate-current>)
+            \n[Memory Leak Fix](<https://modrinth.com/mod/memoryleakfix>)
+            \n[FerriteCore](<https://modrinth.com/mod/ferrite-core>)",
           embeds:[{title:("Release "+$tag), description:$changelog,
           color:3066993}]}')
 
