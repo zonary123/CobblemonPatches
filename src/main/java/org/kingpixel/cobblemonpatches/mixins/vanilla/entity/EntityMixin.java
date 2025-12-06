@@ -1,4 +1,4 @@
-package org.kingpixel.cobblemonpatches.mixins.entity;
+package org.kingpixel.cobblemonpatches.mixins.vanilla.entity;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;

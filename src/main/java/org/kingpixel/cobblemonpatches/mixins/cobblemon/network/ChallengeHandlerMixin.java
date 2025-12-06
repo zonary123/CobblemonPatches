@@ -1,4 +1,4 @@
-package org.kingpixel.cobblemonpatches.mixins.network;
+package org.kingpixel.cobblemonpatches.mixins.cobblemon.network;
 
 import com.cobblemon.mod.common.net.messages.server.BattleChallengePacket;
 import com.cobblemon.mod.common.net.serverhandling.ChallengeHandler;

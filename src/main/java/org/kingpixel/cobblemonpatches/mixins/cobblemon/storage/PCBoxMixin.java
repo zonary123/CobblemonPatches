@@ -1,4 +1,4 @@
-package org.kingpixel.cobblemonpatches.mixins.storage;
+package org.kingpixel.cobblemonpatches.mixins.cobblemon.storage;
 
 import com.cobblemon.mod.common.api.storage.pc.PCBox;
 import com.cobblemon.mod.common.pokemon.Pokemon;

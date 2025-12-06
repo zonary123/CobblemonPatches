@@ -1,4 +1,4 @@
-package org.kingpixel.cobblemonpatches.mixins.blockentity;
+package org.kingpixel.cobblemonpatches.mixins.cobblemon.blockentity;
 
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.storage.PokemonStoreManager;

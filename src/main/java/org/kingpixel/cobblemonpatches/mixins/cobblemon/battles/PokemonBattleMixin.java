@@ -1,4 +1,4 @@
-package org.kingpixel.cobblemonpatches.mixins.battles;
+package org.kingpixel.cobblemonpatches.mixins.cobblemon.battles;
 
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.ActorType;
