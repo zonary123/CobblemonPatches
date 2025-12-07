@@ -1,4 +1,4 @@
-package org.kingpixel.cobblemonpatches.mixins.storage;
+package org.kingpixel.cobblemonpatches.mixins.cobblemon.storage;
 
 import com.cobblemon.mod.common.api.storage.PokemonStore;
 import com.cobblemon.mod.common.api.storage.StorePosition;

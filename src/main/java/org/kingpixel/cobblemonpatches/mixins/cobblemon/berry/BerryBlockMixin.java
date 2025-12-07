@@ -1,4 +1,4 @@
-package org.kingpixel.cobblemonpatches.mixins.berry;
+package org.kingpixel.cobblemonpatches.mixins.cobblemon.berry;
 
 import com.cobblemon.mod.common.api.berry.Berries;
 import com.cobblemon.mod.common.api.berry.Berry;

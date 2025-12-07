@@ -1,4 +1,4 @@
-package org.kingpixel.cobblemonpatches.mixins.entity;
+package org.kingpixel.cobblemonpatches.mixins.vanilla.entity;
 
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.math.Vec3d;

@@ -1,4 +1,4 @@
-package org.kingpixel.cobblemonpatches.mixins.things;
+package org.kingpixel.cobblemonpatches.mixins.cobblemon.things;
 
 import com.cobblemon.mod.common.world.feature.SaccharineTreeFeature;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;

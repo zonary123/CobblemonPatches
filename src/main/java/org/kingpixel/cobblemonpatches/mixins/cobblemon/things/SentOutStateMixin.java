@@ -1,4 +1,4 @@
-package org.kingpixel.cobblemonpatches.mixins.things;
+package org.kingpixel.cobblemonpatches.mixins.cobblemon.things;
 
 import com.cobblemon.mod.common.pokemon.activestate.SentOutState;
 import org.kingpixel.cobblemonpatches.CobblemonPatches;
