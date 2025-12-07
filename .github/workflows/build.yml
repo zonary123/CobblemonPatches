@@ -75,7 +75,6 @@ jobs:
             \n[Lithium](<https://modrinth.com/mod/lithium>)
             \n[Krypton](<https://modrinth.com/mod/krypton>)
             \n[Alternate Current](<https://modrinth.com/mod/alternate-current>)
-            \n[Memory Leak Fix](<https://modrinth.com/mod/memoryleakfix>)
             \n[FerriteCore](<https://modrinth.com/mod/ferrite-core>)",
           embeds:[{title:("Release "+$tag), description:$changelog,
           color:3066993}]}')
