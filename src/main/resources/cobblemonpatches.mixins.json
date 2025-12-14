@@ -11,6 +11,7 @@
     "cobblemon.berry.BerryBlockEntityMixin",
     "cobblemon.berry.BerryBlockMixin",
     "cobblemon.blockentity.PokemonPastureBlockEntityTetheringMixin",
+    "cobblemon.entity.EmptyPokeballEntityMixin",
     "cobblemon.entity.PokemonEntityMixin",
     "cobblemon.network.ChallengeHandlerMixin",
     "cobblemon.network.ServerboundUpdateRidingStateHandlerMixin",
