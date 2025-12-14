@@ -1,11 +1,10 @@
 package org.kingpixel.cobblemonpatches.mixins.cobblemon.things;
 
 import com.cobblemon.mod.common.pokemon.activestate.SentOutState;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import org.kingpixel.cobblemonpatches.CobblemonPatches;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * @author Carlos Varas Alonso - 24/11/2025 6:59
@@ -13,17 +12,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(value = SentOutState.class, remap = false)
 public abstract class SentOutStateMixin {
 
-  @Inject(method = "recall", at = @At("HEAD"), cancellable = true)
-  private void onRecallHead(CallbackInfo ci) {
-    SentOutState thisState = (SentOutState) (Object) this;
-    CobblemonPatches.server.execute(() -> {
-      var entity = thisState.getEntity();
-      if (entity == null) return;
-      entity.discard();
-    });
-    ci.cancel();
+  @WrapMethod(method = "recall")
+  private void ensureMain(Operation<Void> original) {
+    if (!CobblemonPatches.server.isOnThread()) {
+      CobblemonPatches.server.execute(original::call);
+      return;
+    }
+
+    original.call();
   }
-
-
 }
-
