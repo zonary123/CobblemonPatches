@@ -69,13 +69,16 @@ jobs:
           # Generar JSON embed correctamente escapado
           JSON_PAYLOAD=$(jq -nc --arg tag "$TAG" --arg changelog "$CHANGELOG_CONTENT" \
             '{content: "@everyone 🎉 New Release!
-            \n[GitHub](<https://github.com/zonary123/CobblemonPatches>)
-            \nHere you have a list of optimization mods. It is recommended to have them on the server.
-            \n[ScalableLux](<https://modrinth.com/mod/scalablelux>)
-            \n[Lithium](<https://modrinth.com/mod/lithium>)
-            \n[Krypton](<https://modrinth.com/mod/krypton>)
-            \n[Alternate Current](<https://modrinth.com/mod/alternate-current>)
-            \n[FerriteCore](<https://modrinth.com/mod/ferrite-core>)",
+            If you want contribute to the project, feel free to check the code on:
+            [GitHub Repository](<https://github.com/zonary123/CobblemonPatches>)
+            Here you have a list of optimization mods. It is recommended to have them on the server.
+            [ScalableLux](<https://modrinth.com/mod/scalablelux>)
+            [Lithium](<https://modrinth.com/mod/lithium>)
+            [Krypton](<https://modrinth.com/mod/krypton>)
+            [Alternate Current](<https://modrinth.com/mod/alternate-current>)
+            [FerriteCore](<https://modrinth.com/mod/ferrite-core>)
+            Protection mods:
+            [Panda Anti-Dupe](<https://modrinth.com/mod/pandaantidupe>)",
           embeds:[{title:("Release "+$tag), description:$changelog,
           color:3066993}]}')
 
