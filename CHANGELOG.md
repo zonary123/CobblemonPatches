@@ -9,6 +9,8 @@
 ### Bug Fixes
 
 - **SaccharineTreeFeature**: Now no longer crashes when removing an entity asynchronously.
+- **EmptyPokeBallEntity**: Prevents a NullPointerException that might occur in rare cases.
+- Fixes some crashes while ticking entities related to Cobblemon entities in FastUtil collections
 
 ### Optimizations
 
