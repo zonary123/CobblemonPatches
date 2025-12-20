@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.0] - 2025-12-19 (Upcoming)
+
+### Features
+
+- N/A
+
+### Bug Fixes
+
+- **ServerCommandSource**: Removed command source caching for now because the current implementation was causing memory leaks, will evaluate later if it's necessary making a new system or if we should remove this optimization
+
 ## [1.0.0] - 2025-12-01
 
 ### Features

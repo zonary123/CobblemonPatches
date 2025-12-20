@@ -19,9 +19,7 @@
     "cobblemon.storage.PCStoreMixin",
     "cobblemon.storage.PokemonStoreMixin",
     "cobblemon.things.SaccharineTreeFeatureMixin",
-    "cobblemon.things.SentOutStateMixin",
-    "vanilla.entity.EntityMixin",
-    "vanilla.entity.ServerCommandSourceMixin"
+    "cobblemon.things.SentOutStateMixin"
   ],
   "injectors": {
     "defaultRequire": 1
