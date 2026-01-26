@@ -47,9 +47,9 @@ dependencies {
 
 processResources {
   var properties = [
-    "version": version,
+    "version"          : version,
     "minecraft_version": project.minecraft_version,
-    "loader_version": project.loader_version,
+    "loader_version"   : project.loader_version,
     "cobblemon_version": project.cobblemon_version
   ]
   for (property in properties) {

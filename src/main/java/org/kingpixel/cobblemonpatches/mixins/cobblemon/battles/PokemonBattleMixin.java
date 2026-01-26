@@ -44,12 +44,18 @@ import static com.cobblemon.mod.common.util.LocalizationUtilsKt.battleLang;
  */
 @Mixin(value = PokemonBattle.class, remap = false)
 public abstract class PokemonBattleMixin {
-  @Unique private List<BattleSide> cachedSides;
-  @Unique private List<BattleActor> cachedActors;
-  @Unique private List<ActiveBattlePokemon> cachedActivePokemon;
-  @Unique private List<UUID> cachedPlayerUUIDs;
-  @Unique private List<ServerPlayerEntity> cachedPlayers;
-  @Unique private boolean cacheDirty = true;
+  @Unique
+  private List<BattleSide> cachedSides;
+  @Unique
+  private List<BattleActor> cachedActors;
+  @Unique
+  private List<ActiveBattlePokemon> cachedActivePokemon;
+  @Unique
+  private List<UUID> cachedPlayerUUIDs;
+  @Unique
+  private List<ServerPlayerEntity> cachedPlayers;
+  @Unique
+  private boolean cacheDirty = true;
 
   @Unique
   private void invalidateCache() {
@@ -176,7 +182,8 @@ public abstract class PokemonBattleMixin {
     cir.cancel();
   }
 
-  @Unique private Boolean isPvNCache = null;
+  @Unique
+  private Boolean isPvNCache = null;
 
   @Inject(method = "isPvN", at = @At("HEAD"), cancellable = true)
   private void PokemonBattleMixin$isPvN(CallbackInfoReturnable<Boolean> cir) {
@@ -191,7 +198,8 @@ public abstract class PokemonBattleMixin {
     isPvNCache = cir.getReturnValue();
   }
 
-  @Unique private Boolean isPvPCache = null;
+  @Unique
+  private Boolean isPvPCache = null;
 
   @Inject(method = "isPvP", at = @At("HEAD"), cancellable = true)
   private void PokemonBattleMixin$isPvP(CallbackInfoReturnable<Boolean> cir) {
@@ -206,7 +214,8 @@ public abstract class PokemonBattleMixin {
     isPvPCache = cir.getReturnValue();
   }
 
-  @Unique private Boolean isPvWCache = null;
+  @Unique
+  private Boolean isPvWCache = null;
 
   @Inject(method = "isPvW", at = @At("HEAD"), cancellable = true)
   private void PokemonBattleMixin$isPvW(CallbackInfoReturnable<Boolean> cir) {
@@ -244,10 +253,11 @@ public abstract class PokemonBattleMixin {
     }
   }
 
-  @Unique private void collectActors(Iterable<BattleActor> allActors,
-                                     List<FleeableBattleActor> fleeableActors,
-                                     List<EntityBackedBattleActor<?>> playerEntities,
-                                     List<PokemonEntity> wildEntities) {
+  @Unique
+  private void collectActors(Iterable<BattleActor> allActors,
+                             List<FleeableBattleActor> fleeableActors,
+                             List<EntityBackedBattleActor<?>> playerEntities,
+                             List<PokemonEntity> wildEntities) {
     for (BattleActor actor : allActors) {
       if (actor instanceof FleeableBattleActor fleeable) {
         fleeableActors.add(fleeable);
@@ -263,8 +273,9 @@ public abstract class PokemonBattleMixin {
     }
   }
 
-  @Unique private boolean allWildOutOfRange(List<FleeableBattleActor> fleeableActors,
-                                            List<EntityBackedBattleActor<?>> playerEntities) {
+  @Unique
+  private boolean allWildOutOfRange(List<FleeableBattleActor> fleeableActors,
+                                    List<EntityBackedBattleActor<?>> playerEntities) {
     for (FleeableBattleActor pokemonActor : fleeableActors) {
       Pair<ServerWorld, Vec3d> wp = pokemonActor.getWorldAndPosition();
       if (wp == null) continue;
@@ -280,7 +291,8 @@ public abstract class PokemonBattleMixin {
     return true;
   }
 
-  @Unique private float nearestPlayerDistance(Vec3d pos, World world, List<EntityBackedBattleActor<?>> playerEntities) {
+  @Unique
+  private float nearestPlayerDistance(Vec3d pos, World world, List<EntityBackedBattleActor<?>> playerEntities) {
     float nearest = Float.MAX_VALUE;
     for (EntityBackedBattleActor<?> playerActor : playerEntities) {
       Entity entity = playerActor.getEntity();
@@ -292,28 +304,32 @@ public abstract class PokemonBattleMixin {
     return nearest;
   }
 
-  @Unique private void healWildPokemon(List<PokemonEntity> wildEntities) {
+  @Unique
+  private void healWildPokemon(List<PokemonEntity> wildEntities) {
     for (PokemonEntity entity : wildEntities) {
       entity.getPokemon().heal();
     }
   }
 
-  @Unique private PlayerBattleActor findAnyPlayer(Iterable<BattleActor> allActors) {
+  @Unique
+  private PlayerBattleActor findAnyPlayer(Iterable<BattleActor> allActors) {
     for (BattleActor actor : allActors) {
       if (actor instanceof PlayerBattleActor player) return player;
     }
     return null;
   }
 
-  @Unique private void postBattleFledEvent(PokemonBattle battle, PlayerBattleActor player) {
+  @Unique
+  private void postBattleFledEvent(PokemonBattle battle, PlayerBattleActor player) {
     if (player != null) {
       BattleFledEvent[] events = {new BattleFledEvent(battle, player)};
       CobblemonEvents.BATTLE_FLED.post(events, e -> Unit.INSTANCE);
     }
   }
 
-  @Unique private void sendFleeMessages(Iterable<BattleActor> allActors) {
-    Text text = battleLang("battle.fled")
+  @Unique
+  private void sendFleeMessages(Iterable<BattleActor> allActors) {
+    Text text = battleLang("flee")
       .setStyle(Style.EMPTY.withColor(Formatting.YELLOW));
     for (BattleActor actor : allActors) {
       if (actor instanceof EntityBackedBattleActor<?> entityActor) {
