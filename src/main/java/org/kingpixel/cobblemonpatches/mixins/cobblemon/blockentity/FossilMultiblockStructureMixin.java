@@ -4,6 +4,8 @@ import com.cobblemon.mod.common.block.multiblock.FossilMultiblockStructure;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtElement;
 import org.kingpixel.cobblemonpatches.OpsUtil;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,13 +21,15 @@ public abstract class FossilMultiblockStructureMixin {
       target = "Lcom/mojang/serialization/Codec;encodeStart(Lcom/mojang/serialization/DynamicOps;Ljava/lang/Object;)Lcom/mojang/serialization/DataResult;"
     )
   )
-  private DataResult redirectFossilInventoryForEach(
-    Codec instance, DynamicOps dynamicOps, Object o
+  private <T> DataResult<NbtElement> cobblemonpatches$encodeItemStackSafe(
+    Codec<T> codec,
+    DynamicOps<?> ops,
+    Object value
   ) {
-    return (DataResult) instance.encodeStart(
+    return ItemStack.CODEC.encodeStart(
       OpsUtil.getOps(),
-      o
-    ).getOrThrow();
+      (ItemStack) value
+    );
   }
 }
 

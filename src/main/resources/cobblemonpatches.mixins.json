@@ -10,6 +10,7 @@
     "cobblemon.battles.PokemonBattleMixin",
     "cobblemon.berry.BerryBlockEntityMixin",
     "cobblemon.berry.BerryBlockMixin",
+    "cobblemon.blockentity.FossilMultiblockStructureMixin",
     "cobblemon.blockentity.PokemonPastureBlockEntityTetheringMixin",
     "cobblemon.entity.EmptyPokeballEntityMixin",
     "cobblemon.entity.PokemonEntityMixin",
