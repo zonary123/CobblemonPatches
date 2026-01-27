@@ -6,9 +6,6 @@ Compatibility with Cobblemon 1.7.2
 
 ### Features
 
-- Fix for fossil machines that could cause a crash if the Pokémon had an enchanted book or an item with special NBT
-  data.
-
 ## [1.1.0] - 2025-12-19 (Upcoming)
 
 ### Features
