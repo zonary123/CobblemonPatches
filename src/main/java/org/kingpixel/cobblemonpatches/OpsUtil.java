@@ -21,19 +21,4 @@ public class OpsUtil {
     }
     return ops;
   }
-
-  /**
-   * Encodea un valor usando RegistryOps y devuelve el DataResult
-   */
-  /*@SuppressWarnings("unchecked")
-  public static DataResult<NbtElement> encodeObject(Codec<?> codec, DynamicOps<?> value, Object o) {
-    try {
-      return ((Codec<Object>) codec).encodeStart(getOps(), o);
-    } catch (Exception e) {
-      CobblemonPatches.LOGGER.error(
-        "Failed to encode object with RegistryOps. Value: {}", value, e
-      );
-      return codec.encodeStart(value, o);
-    }
-  }*/
 }

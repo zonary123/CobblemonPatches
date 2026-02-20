@@ -8,7 +8,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.spongepowered.asm.mixin.Mixin;
 
-@Mixin(ServerboundUpdateRidingStateHandler.class)
+@Mixin(value = ServerboundUpdateRidingStateHandler.class, priority = 9999)
 public class ServerboundUpdateRidingStateHandlerMixin {
 
   @WrapMethod(method = "handle(Lcom/cobblemon/mod/common/net/messages/server/pokemon/update/ServerboundUpdateRidingStatePacket;Lnet/minecraft/server/MinecraftServer;Lnet/minecraft/server/network/ServerPlayerEntity;)V")
@@ -17,7 +17,6 @@ public class ServerboundUpdateRidingStateHandlerMixin {
       server.execute(() -> original.call(packet, server, player));
       return;
     }
-
     original.call(packet, server, player);
   }
 }
