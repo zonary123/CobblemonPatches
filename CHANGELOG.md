@@ -9,6 +9,9 @@ Compatibility with Cobblemon 1.7.2
 - A crash in the Fossil Machine was fixed when inserting an enchanted item into the machine. This can only be reproduced
   if the machine allows you to insert enchantable items in Survival.
 
+- GildedChest: fixed a duplication exploit that allowed duplicating items by simply moving far enough away from the
+  chest and taking the items.
+
 ## [1.1.0] - 2025-12-19 (Upcoming)
 
 ### Features

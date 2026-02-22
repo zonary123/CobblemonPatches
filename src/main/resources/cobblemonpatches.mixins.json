@@ -13,6 +13,7 @@
     "cobblemon.berry.BerryBlockMixin",
     "cobblemon.blockentity.FossilMultiblockStructureMixin",
     "cobblemon.blockentity.PokemonPastureBlockEntityTetheringMixin",
+    "cobblemon.dupe.GildedChestBlockEntityMixin",
     "cobblemon.entity.EmptyPokeballEntityMixin",
     "cobblemon.entity.PokemonEntityMixin",
     "cobblemon.network.ChallengeHandlerMixin",

@@ -20,6 +20,8 @@ public class CobblemonPatches implements ModInitializer {
       ⚔️ Optimizations for PokemonBattle's isPvN(), isPvP(), and isPvW() are enabled.
       """);
     events();
+
+    
   }
 
   private void events() {
