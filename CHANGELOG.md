@@ -10,7 +10,7 @@ Compatibility with Cobblemon 1.7.2
   if the machine allows you to insert enchantable items in Survival.
 
 - GildedChest: fixed a duplication exploit that allowed duplicating items by simply moving far enough away from the
-  chest and taking the items.
+  chest and taking the items. (Now allow spectators to interact with the chest)
 
 ## [1.1.0] - 2025-12-19 (Upcoming)
 
