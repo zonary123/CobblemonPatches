@@ -19,9 +19,6 @@ public abstract class GildedChestBlockEntityMixin {
     GildedChestBlockEntity instance = ((GildedChestBlockEntity) (Object) this);
 
     BlockPos pos = instance.getPos();
-
-    if (!player.getWorld().equals(instance.getWorld())) return false;
-
     double distanceSq = player.squaredDistanceTo(
       pos.getX() + 0.5,
       pos.getY() + 0.5,
@@ -30,4 +27,5 @@ public abstract class GildedChestBlockEntityMixin {
 
     return distanceSq <= maxDistanceSq;
   }
+
 }
