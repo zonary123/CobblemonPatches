@@ -4,7 +4,9 @@
   "package": "org.kingpixel.cobblemonpatches.mixins",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "async.EntityCallBackMixin",
     "async.PlayerManagerMixin",
+    "async.ServerEntityManagerMixin",
     "cobblemon.PokemonMixin",
     "cobblemon.SpeciesMixin",
     "cobblemon.battles.BattleRegistryMixin",

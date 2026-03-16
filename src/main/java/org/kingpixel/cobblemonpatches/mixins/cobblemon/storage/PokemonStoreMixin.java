@@ -9,9 +9,6 @@ import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -22,16 +19,20 @@ import java.util.concurrent.TimeUnit;
 @Mixin(value = PokemonStore.class, remap = false)
 public abstract class PokemonStoreMixin<T extends StorePosition> {
 
-  @Unique private final Cache<UUID, Pokemon> cobblemon$uuidIndex = Caffeine.newBuilder()
+  @Unique
+  private final Cache<UUID, Pokemon> cobblemon$uuidIndex = Caffeine.newBuilder()
     .expireAfterWrite(5, TimeUnit.MINUTES)
     .build();
 
-  @Inject(method = "remove(Lcom/cobblemon/mod/common/pokemon/Pokemon;)Z",
-          at = @At("HEAD"))
-  private void cobblemon$onRemove(Pokemon pokemon, CallbackInfoReturnable<Boolean> cir) {
-    if (pokemon != null) {
+  @WrapMethod(method = "remove(Lcom/cobblemon/mod/common/pokemon/Pokemon;)Z")
+  private boolean optimizedRemove(Pokemon pokemon, Operation<Boolean> original) {
+    boolean result = original.call(pokemon);
+
+    if (result && pokemon != null) {
       cobblemon$uuidIndex.invalidate(pokemon.getUuid());
     }
+
+    return result;
   }
 
   @WrapMethod(method = "get(Ljava/util/UUID;)Lcom/cobblemon/mod/common/pokemon/Pokemon;")

@@ -16,8 +16,6 @@ public class PatchesUtil {
         reason,
         new Throwable()
       );
-
-      throw new IllegalStateException("Asynchronous " + reason + "!");
     }
   }
 }

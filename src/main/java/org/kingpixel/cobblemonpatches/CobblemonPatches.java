@@ -18,10 +18,11 @@ public class CobblemonPatches implements ModInitializer {
       🔑 Caching for showdownId() is enabled.
       📦 PCBox and PCStore iterator optimizations are active.
       ⚔️ Optimizations for PokemonBattle's isPvN(), isPvP(), and isPvW() are enabled.
+      Optimization PatureBlocks.
       """);
     events();
 
-    
+
   }
 
   private void events() {

@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.*;
 import java.util.UUID;
 
 @Mixin(targets = "com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity$Tethering", remap = false)
-public class PokemonPastureBlockEntityTetheringMixin {
+public abstract class PokemonPastureBlockEntityTetheringMixin {
 
   @Shadow
   @Final

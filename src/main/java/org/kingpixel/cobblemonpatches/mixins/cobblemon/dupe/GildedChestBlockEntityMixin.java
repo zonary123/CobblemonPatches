@@ -17,16 +17,16 @@ public abstract class GildedChestBlockEntityMixin {
 
   @WrapMethod(method = "canPlayerUse")
   public boolean canPlayerUse(PlayerEntity player, Operation<Boolean> original) {
-    GildedChestBlockEntity instance = ((GildedChestBlockEntity) (Object) this);
+    GildedChestBlockEntity chest = (GildedChestBlockEntity) (Object) this;
+    if (chest == null) return false;
+    BlockPos pos = chest.getPos();
+    if (pos == null || player == null) return false;
 
-    BlockPos pos = instance.getPos();
-
-    double distanceSq = player.squaredDistanceTo(
+    return player.squaredDistanceTo(
       pos.getX() + 0.5,
       pos.getY() + 0.5,
       pos.getZ() + 0.5
-    );
-    return distanceSq <= MAX_DISTANCE_SQ;
+    ) <= MAX_DISTANCE_SQ;
   }
 
 }

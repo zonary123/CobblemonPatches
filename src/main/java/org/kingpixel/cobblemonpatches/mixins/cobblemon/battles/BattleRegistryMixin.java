@@ -7,6 +7,8 @@ import com.cobblemon.mod.common.battles.BattleRegistry;
 import com.cobblemon.mod.common.battles.BattleSide;
 import com.cobblemon.mod.common.battles.BattleStartResult;
 import com.cobblemon.mod.common.battles.actor.PlayerBattleActor;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import kotlin.Unit;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,104 +18,132 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
-/**
- * Mixin que optimiza y gestiona el cacheo de batallas activas en el BattleRegistry.
- * Mejora el rendimiento de las búsquedas y asegura limpieza de memoria al cerrar batallas.
- *
- * @author Carlos Varas Alonso - Optimizado 27/10/2025
- */
 @Mixin(value = BattleRegistry.class, remap = false)
-abstract class BattleRegistryMixin {
+public abstract class BattleRegistryMixin {
 
   /**
    * BattleId → PokemonBattle
+   * Automatically managed cache with eviction.
    */
-  @Unique private static final Map<UUID, PokemonBattle> ACTIVE_BATTLES = new ConcurrentHashMap<>();
-
-  /**
-   * PlayerUUID → PokemonBattle
-   */
-  @Unique private static final Map<UUID, PokemonBattle> PLAYER_BATTLES = new ConcurrentHashMap<>();
+  @Unique
+  private static final Cache<UUID, PokemonBattle> ACTIVE_BATTLES = Caffeine.newBuilder()
+    .maximumSize(5000)
+    .expireAfterAccess(30, TimeUnit.MINUTES)
+    .build();
 
   /**
    * PlayerUUID → BattleId
+   * O(1) player lookup index.
    */
-  @Unique private static final Map<UUID, UUID> PLAYER_TO_BATTLE_ID = new ConcurrentHashMap<>();
+  @Unique
+  private static final ConcurrentHashMap<UUID, UUID> PLAYER_TO_BATTLE = new ConcurrentHashMap<>();
 
-  @Inject(method = "onPlayerDisconnect", at = @At("HEAD"))
-  private void onPlayerDisconnect(ServerPlayerEntity player, CallbackInfo ci) {
-    removePlayerFromCaches(player.getUuid());
-  }
+  /* ============================= */
+  /* ========== EVENTS =========== */
+  /* ============================= */
 
   @Inject(method = "startBattle", at = @At("RETURN"))
-  private static void onStartBattle(BattleFormat format, BattleSide side1, BattleSide side2,
-                                    boolean canPreempt, CallbackInfoReturnable<BattleStartResult> cir) {
+  private static void onStartBattle(
+    BattleFormat format,
+    BattleSide side1,
+    BattleSide side2,
+    boolean canPreempt,
+    CallbackInfoReturnable<BattleStartResult> cir
+  ) {
+
     BattleStartResult result = cir.getReturnValue();
-    if (result != null) {
-      updateCachesForSide(side1, result);
-      updateCachesForSide(side2, result);
-    }
+    if (result == null) return;
+
+    result.ifSuccessful(battle -> {
+
+      UUID battleId = battle.getBattleId();
+
+      ACTIVE_BATTLES.put(battleId, battle);
+
+      indexSide(side1, battleId);
+      indexSide(side2, battleId);
+
+      return Unit.INSTANCE;
+    });
   }
 
   @Inject(method = "closeBattle", at = @At("HEAD"))
   private static void onCloseBattle(PokemonBattle battle, CallbackInfo ci) {
     if (battle == null) return;
-    UUID battleId = battle.getBattleId();
-    ACTIVE_BATTLES.remove(battleId);
 
-    PLAYER_TO_BATTLE_ID.entrySet().removeIf(entry -> {
-      if (entry.getValue().equals(battleId)) {
-        UUID playerId = entry.getKey();
-        PLAYER_BATTLES.remove(playerId);
-        return true;
-      }
-      return false;
-    });
+    UUID battleId = battle.getBattleId();
+
+    ACTIVE_BATTLES.invalidate(battleId);
+
+    PLAYER_TO_BATTLE.entrySet().removeIf(
+      entry -> entry.getValue().equals(battleId)
+    );
   }
 
+  @Inject(method = "onPlayerDisconnect", at = @At("HEAD"))
+  private void onPlayerDisconnect(ServerPlayerEntity player, CallbackInfo ci) {
+    if (player == null) return;
+    PLAYER_TO_BATTLE.remove(player.getUuid());
+  }
+
+  /* ============================= */
+  /* ========== QUERIES ========== */
+  /* ============================= */
+
   @Inject(method = "getBattle", at = @At("HEAD"), cancellable = true)
-  private static void onGetBattle(UUID id, CallbackInfoReturnable<PokemonBattle> cir) {
-    Optional.ofNullable(ACTIVE_BATTLES.get(id)).ifPresent(cir::setReturnValue);
+  private static void getBattle(UUID id, CallbackInfoReturnable<PokemonBattle> cir) {
+    PokemonBattle battle = ACTIVE_BATTLES.getIfPresent(id);
+    if (battle != null) {
+      cir.setReturnValue(battle);
+    }
   }
 
   @Inject(method = "getBattleByParticipatingPlayer", at = @At("HEAD"), cancellable = true)
-  private static void onGetBattleByPlayer(ServerPlayerEntity player, CallbackInfoReturnable<PokemonBattle> cir) {
-    if (player != null) {
-      Optional.ofNullable(PLAYER_BATTLES.get(player.getUuid())).ifPresent(cir::setReturnValue);
+  private static void getBattleByPlayer(
+    ServerPlayerEntity player,
+    CallbackInfoReturnable<PokemonBattle> cir
+  ) {
+
+    if (player == null) return;
+
+    UUID battleId = PLAYER_TO_BATTLE.get(player.getUuid());
+    if (battleId == null) return;
+
+    PokemonBattle battle = ACTIVE_BATTLES.getIfPresent(battleId);
+    if (battle != null) {
+      cir.setReturnValue(battle);
     }
   }
 
   @Inject(method = "getBattleByParticipatingPlayerId", at = @At("HEAD"), cancellable = true)
-  private static void onGetBattleByPlayerId(UUID playerId, CallbackInfoReturnable<PokemonBattle> cir) {
-    Optional.ofNullable(PLAYER_BATTLES.get(playerId)).ifPresent(cir::setReturnValue);
+  private static void getBattleByPlayerId(
+    UUID playerId,
+    CallbackInfoReturnable<PokemonBattle> cir
+  ) {
+
+    if (playerId == null) return;
+
+    UUID battleId = PLAYER_TO_BATTLE.get(playerId);
+    if (battleId == null) return;
+
+    PokemonBattle battle = ACTIVE_BATTLES.getIfPresent(battleId);
+    if (battle != null) {
+      cir.setReturnValue(battle);
+    }
   }
 
+  /* ============================= */
+
   @Unique
-  private static void updateCachesForSide(BattleSide side, BattleStartResult result) {
-    result.ifSuccessful(battle -> {
-      for (BattleActor actor : side.getActors()) {
-        if (actor instanceof PlayerBattleActor playerActor) {
-          UUID playerUUID = playerActor.getUuid();
-          UUID battleId = battle.getBattleId();
-          ACTIVE_BATTLES.put(battleId, battle);
-          PLAYER_BATTLES.put(playerUUID, battle);
-          PLAYER_TO_BATTLE_ID.put(playerUUID, battleId);
-        }
+  private static void indexSide(BattleSide side, UUID battleId) {
+    for (BattleActor actor : side.getActors()) {
+      if (actor instanceof PlayerBattleActor playerActor) {
+        PLAYER_TO_BATTLE.put(playerActor.getUuid(), battleId);
       }
-      return Unit.INSTANCE;
-    });
-  }
-
-  @Unique
-  private void removePlayerFromCaches(UUID playerUUID) {
-    if (playerUUID == null) return;
-    UUID battleId = PLAYER_TO_BATTLE_ID.remove(playerUUID);
-    if (battleId != null) ACTIVE_BATTLES.remove(battleId);
-    PLAYER_BATTLES.remove(playerUUID);
+    }
   }
 }
