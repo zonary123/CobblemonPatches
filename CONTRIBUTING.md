@@ -1,7 +1,3 @@
-¡Perfecto! Aquí tienes la versión **en inglés y lista para GitHub en Markdown**, con un estilo profesional, aviso legal
-y CLA integrado:
-
-````markdown
 # 🛠 Contributing to the Cobblemon Optimization Mod
 
 > **Legal Notice:** This project is **All Rights Reserved**.
