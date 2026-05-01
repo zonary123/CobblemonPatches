@@ -1,18 +1,18 @@
 package org.kingpixel.cobblemonpatches.mixins.cobblemon.blockentity;
 
-import org.kingpixel.cobblemonpatches.OpsUtil;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
-
 import com.cobblemon.mod.common.block.multiblock.FossilMultiblockStructure;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
-
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
+import org.kingpixel.cobblemonpatches.CobblemonPatches;
+import org.kingpixel.cobblemonpatches.OpsUtil;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(FossilMultiblockStructure.class)
 public abstract class FossilMultiblockStructureMixin {
@@ -29,10 +29,17 @@ public abstract class FossilMultiblockStructureMixin {
     DynamicOps<?> ops,
     Object value
   ) {
-    // FIXING BUG: This new encoder is causing server desync issues. Strip enchantment components in-place.
-    ItemStack stack = (ItemStack) value;
+    if (!(value instanceof ItemStack stack)) {
+      CobblemonPatches.LOGGER.warn("FossilMultiblockStructure received non-ItemStack value during writeToNbt: {}", value);
+      return DataResult.success(new NbtCompound());
+    }
 
-    // Remove NBT enchantments from the item stored in the machine
+
+    if (stack.isEmpty() || stack.getCount() <= 0) {
+      CobblemonPatches.LOGGER.warn("Skipping invalid fossil machine stack during writeToNbt (item={}, count={})", stack.getItem(), stack.getCount());
+      return DataResult.success(new NbtCompound());
+    }
+
     stack.remove(DataComponentTypes.ENCHANTMENTS);
     stack.remove(DataComponentTypes.STORED_ENCHANTMENTS);
 
@@ -42,4 +49,3 @@ public abstract class FossilMultiblockStructureMixin {
     );
   }
 }
-
