@@ -4,6 +4,7 @@
   "package": "org.kingpixel.cobblemonpatches.mixins",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "async.ChunkTicketManagerMixin",
     "async.EntityCallBackMixin",
     "async.PlayerManagerMixin",
     "async.ServerEntityManagerMixin",

@@ -61,7 +61,6 @@ public abstract class PokemonEntityMixin extends TameableShoulderEntity {
         var pokemonEntity = DESPAWN_QUEUE.remove();
         if (!pokemonEntity.isRemoved()) {
           pokemonEntity.discard();
-          continue;
         }
 
         var pokemon = pokemonEntity.getPokemon();

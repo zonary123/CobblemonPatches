@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.2] - 25-06-2026
+
+### Bug Fixes
+
+- **ChunkTicketManager**: Fixed a NullPointerException in `handleChunkLeave` that occurred when a player disconnected or changed dimensions from a chunk they were not registered in.
+
 ## [1.1.1] - 26-01-2026
 
 Compatibility with Cobblemon 1.7.2 and 1.7.3

@@ -35,6 +35,33 @@ public abstract class PokemonStoreMixin<T extends StorePosition> {
     return result;
   }
 
+  @WrapMethod(method = "remove(Lcom/cobblemon/mod/common/api/storage/StorePosition;)Z")
+  private boolean optimizedRemovePosition(T position, Operation<Boolean> original) {
+    PokemonStore<T> self = (PokemonStore<T>) (Object) this;
+    Pokemon old = self.get(position);
+    boolean result = original.call(position);
+
+    if (result && old != null) {
+      cobblemon$uuidIndex.invalidate(old.getUuid());
+    }
+
+    return result;
+  }
+
+  @WrapMethod(method = "set(Lcom/cobblemon/mod/common/api/storage/StorePosition;Lcom/cobblemon/mod/common/pokemon/Pokemon;)V")
+  private void optimizedSet(T position, Pokemon pokemon, Operation<Void> original) {
+    PokemonStore<T> self = (PokemonStore<T>) (Object) this;
+    Pokemon old = self.get(position);
+    original.call(position, pokemon);
+
+    if (old != null) {
+      cobblemon$uuidIndex.invalidate(old.getUuid());
+    }
+    if (pokemon != null) {
+      cobblemon$uuidIndex.invalidate(pokemon.getUuid());
+    }
+  }
+
   @WrapMethod(method = "get(Ljava/util/UUID;)Lcom/cobblemon/mod/common/pokemon/Pokemon;")
   private Pokemon cobblemon$optimizedGet(UUID uuid, Operation<Pokemon> original) {
     return cobblemon$uuidIndex.get(uuid, original::call);

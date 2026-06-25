@@ -276,6 +276,8 @@ public abstract class PokemonBattleMixin {
   @Unique
   private boolean allWildOutOfRange(List<FleeableBattleActor> fleeableActors,
                                     List<EntityBackedBattleActor<?>> playerEntities) {
+    if (fleeableActors.isEmpty()) return false;
+
     for (FleeableBattleActor pokemonActor : fleeableActors) {
       Pair<ServerWorld, Vec3d> wp = pokemonActor.getWorldAndPosition();
       if (wp == null) continue;
