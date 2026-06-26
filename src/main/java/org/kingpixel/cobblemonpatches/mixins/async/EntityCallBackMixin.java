@@ -3,6 +3,7 @@ package org.kingpixel.cobblemonpatches.mixins.async;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import net.minecraft.entity.Entity;
+import net.minecraft.server.MinecraftServer;
 import org.kingpixel.cobblemonpatches.PatchesUtil;
 import org.spongepowered.asm.mixin.Mixin;
 
@@ -14,16 +15,28 @@ public abstract class EntityCallBackMixin {
   @WrapMethod(
     method = "startTracking(Lnet/minecraft/entity/Entity;)V"
   )
-  private void guardOnTrackingStart(Entity entity, Operation original) {
+  private void guardOnTrackingStart(Entity entity, Operation<?> original) {
     PatchesUtil.catchOp("entity register");
-    original.call(entity);
+
+    MinecraftServer server = entity.getServer();
+    if (server != null && !server.isOnThread()) {
+      server.execute(() -> original.call(entity));
+    } else {
+      original.call(entity);
+    }
   }
 
   @WrapMethod(
     method = "stopTracking(Lnet/minecraft/entity/Entity;)V"
   )
-  private void guardOnTrackingEnd(Entity entity, Operation original) {
+  private void guardOnTrackingEnd(Entity entity, Operation<?> original) {
     PatchesUtil.catchOp("entity unregister");
-    original.call(entity);
+
+    MinecraftServer server = entity.getServer();
+    if (server != null && !server.isOnThread()) {
+      server.execute(() -> original.call(entity));
+    } else {
+      original.call(entity);
+    }
   }
 }
