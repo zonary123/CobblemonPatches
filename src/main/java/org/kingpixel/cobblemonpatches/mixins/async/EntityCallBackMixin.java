@@ -18,9 +18,17 @@ public abstract class EntityCallBackMixin {
   private void guardOnTrackingStart(Entity entity, Operation<?> original) {
     PatchesUtil.catchOp("entity register");
 
-    MinecraftServer server = entity.getServer();
+    if (entity == null) {
+      original.call(null);
+      return;
+    }
+
+    final Entity finalEntity = entity;
+    final Operation<?> finalOriginal = original;
+
+    MinecraftServer server = finalEntity.getServer();
     if (server != null && !server.isOnThread()) {
-      server.execute(() -> original.call(entity));
+      server.execute(() -> finalOriginal.call(finalEntity));
     } else {
       original.call(entity);
     }
@@ -32,9 +40,17 @@ public abstract class EntityCallBackMixin {
   private void guardOnTrackingEnd(Entity entity, Operation<?> original) {
     PatchesUtil.catchOp("entity unregister");
 
-    MinecraftServer server = entity.getServer();
+    if (entity == null) {
+      original.call(null);
+      return;
+    }
+
+    final Entity finalEntity = entity;
+    final Operation<?> finalOriginal = original;
+
+    MinecraftServer server = finalEntity.getServer();
     if (server != null && !server.isOnThread()) {
-      server.execute(() -> original.call(entity));
+      server.execute(() -> finalOriginal.call(finalEntity));
     } else {
       original.call(entity);
     }
