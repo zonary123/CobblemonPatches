@@ -1,25 +1,18 @@
 package org.kingpixel.cobblemonpatches.mixins.cobblemon.blockentity;
 
-import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.storage.PokemonStoreManager;
-import com.cobblemon.mod.common.api.storage.pc.ConstantsKt;
-import com.cobblemon.mod.common.api.storage.pc.PCBox;
 import com.cobblemon.mod.common.api.storage.pc.PCPosition;
 import com.cobblemon.mod.common.api.storage.pc.PCStore;
 import com.cobblemon.mod.common.pokemon.Pokemon;
-import com.cobblemon.mod.common.util.DistributionUtilsKt;
-import net.minecraft.server.MinecraftServer;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.*;
+import org.spongepowered.asm.mixin.injection.At;
 
 import java.util.UUID;
 
 @Mixin(targets = "com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity$Tethering", remap = false)
 public abstract class PokemonPastureBlockEntityTetheringMixin {
-
-  @Shadow
-  @Final
-  private UUID pcId;
 
   @Shadow
   @Final
@@ -32,30 +25,20 @@ public abstract class PokemonPastureBlockEntityTetheringMixin {
    * @author MemencioPerez
    * @reason Cache the PCPosition for faster retrieval
    */
-  @SuppressWarnings("resource")
-  @Overwrite
-  public final @Nullable Pokemon getPokemon() {
-    MinecraftServer server = DistributionUtilsKt.server();
-    if (server == null) return null;
-
-    PokemonStoreManager storage = Cobblemon.INSTANCE.getStorage();
-    PCStore pc = storage.getPC(this.pcId, server.getRegistryManager());
+  @WrapOperation(method = "getPokemon", at = @At(value = "INVOKE", target = "Lcom/cobblemon/mod/common/api/storage/pc/PCStore;get(Ljava/util/UUID;)Lcom/cobblemon/mod/common/pokemon/Pokemon;"))
+  public final @Nullable Pokemon getPokemon(PCStore pc, UUID uuid, Operation<Pokemon> original) {
     Pokemon pokemon;
 
     if (cachedPCPosition != null && (pokemon = pc.get(cachedPCPosition)) != null && pokemon.getUuid().equals(pokemonId)) {
       return pokemon;
     }
 
-    var boxes = pc.getBoxes();
-    var maxBoxes = boxes.size();
-    PCBox currentBox;
-    for (int box = 0; box < maxBoxes; box++) {
-      if ((currentBox = boxes.get(box)) == null) continue;
-      for (int slot = 0; slot < ConstantsKt.POKEMON_PER_BOX; slot++) {
-        if ((pokemon = currentBox.get(slot)) == null || !pokemon.getUuid().equals(pokemonId)) continue;
-        cachedPCPosition = new PCPosition(box, slot);
-        return pokemon;
+    if ((pokemon = original.call(pc, uuid)) != null) {
+      var storeCoordinates = pokemon.getStoreCoordinates().get();
+      if (storeCoordinates != null && storeCoordinates.getPosition() instanceof PCPosition pcPosition) {
+        cachedPCPosition = pcPosition;
       }
+      return pokemon;
     }
 
     return null;

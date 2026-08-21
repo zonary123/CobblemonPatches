@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.3] - 21-08-2026
+
+### Improvements upon existing patches
+
+- **PastureBlocks**: PC positions of the tethered Pokemon are now retrieved directly instead of instantiating the store position manually
+
 ## [1.1.2] - 25-06-2026
 
 ### Bug Fixes
