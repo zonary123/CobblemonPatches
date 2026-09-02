@@ -7,30 +7,29 @@
 
 ### Security & Anti-Lag
 
-- **Snowball**: Added `SnowballEntityMixin` to prevent server lag and memory exhaustion from infinite lingering snowballs (discarded after 200 ticks / 10s of flight or if stationary after 40 ticks).
-- **Exploits Module**: Created a structured package hierarchy under `org.kingpixel.cobblemonpatches.mixins.exploits` (`lag`, `dupe`, `crash`) for all anti-exploit, anti-dupe, and server protection patches.
+- **Snowballs**: Fixed server lag caused by infinite lingering snowballs (automatically removes snowballs that are stuck or flying for too long).
+- **Anti-Exploit System**: Added a structured module to organize and handle anti-lag, anti-dupe, and server security patches.
 
 ### Optimizations
 
-- **Campfire**: Optimized the `serverTick` of `CampfireBlockEntity` by caching recipe availability based on inventory item fingerprints, skipping expensive crafting inputs, assembly checks, and seasonings during inactive periods or mid-cook ticks.
-- **BerryBlockEntity**: Optimized the `setStageTimer` mixin to cancel early when the timer is still active (`value > 0`), completely bypassing unnecessary per-tick execution of `growHelper` and the expensive block state lookup (`State.get()`).
-- **ShowdownId**: Added `formOnlyShowdownId` and `showdownId` caching to `FormDataMixin` and optimized the caching logic in `PokemonMixin` and `SpeciesMixin`.
-- **Aspects**: Optimized `updateAspects` in `PokemonMixin` to directly construct and populate `LinkedHashSet` instead of performing expensive intermediate collection flattening and set copying.
-- **MoveSet**: Overrode `iterator()` in `MoveSet` to use a custom non-allocating iterator, bypassing intermediate list generation from Kotlin's `.filterNotNull()` during codec serialization/deserialization.
-- **EVs**: Overrode `getCODEC()` and `getSTREAM_CODEC()` in `EVs` with optimized versions that serialize directly using the backing `stats` map of `PokemonStats`, avoiding copying elements to a new `HashMap` on every serialization/sync.
-- **Profiling**: Renamed all showdown caching and aspect methods to use the `cobblemonPatches$` prefix for improved readability and tracking when profiling with Spark.
+- **Campfires**: Significantly reduced server lag caused by campfires by skipping redundant recipe and cooking checks every tick.
+- **Berry Plants**: Reduced lag from berry plants by avoiding unnecessary tick updates and improving berry type lookups.
+- **Showdown IDs**: Improved performance when calculating Pokémon battle IDs by caching them.
+- **Pokémon Aspects**: Optimized how Pokémon visual aspects and forms are processed to lower memory usage.
+- **Moves & EVs**: Optimized Pokémon move lists and EV stat synchronization to reduce lag and memory allocation during saves and syncs.
+- **Profiling**: Improved method naming to make performance tracking easier when profiling with Spark.
 
 ## [1.1.3] - 21-08-2026
 
 ### Improvements upon existing patches
 
-- **PastureBlocks**: PC positions of the tethered Pokemon are now retrieved directly instead of instantiating the store position manually
+- **PastureBlocks**: PC positions of tethered Pokémon are now retrieved directly instead of manually searching the entire PC.
 
 ## [1.1.2] - 25-06-2026
 
 ### Bug Fixes
 
-- **ChunkTicketManager**: Fixed a NullPointerException in `handleChunkLeave` that occurred when a player disconnected or changed dimensions from a chunk they were not registered in.
+- **ChunkTicketManager**: Fixed a crash (NullPointerException) that occurred when a player disconnected or changed dimensions from an unregistered chunk.
 
 ## [1.1.1] - 26-01-2026
 
@@ -38,40 +37,27 @@ Compatibility with Cobblemon 1.7.2 and 1.7.3
 
 ### Bug Fixes
 
-- A crash in the Fossil Machine was fixed when inserting an enchanted item into the machine. This can only be reproduced
-  if the machine allows you to insert enchantable items in Survival.
+- **Fossil Machine**: Fixed a crash when inserting enchanted items into the machine in Survival.
+- **Gilded Chest**: Fixed an item duplication exploit with gilded chests.
+- **Fossil Machine**: Fixed a rare server crash during fossil operations.
 
-- GildedChest: fixed a duplication exploit that allowed items to be duplicated.
-- Fossil Machine: Fixed the next crash -> https://pastebin.com/R89mSgUG
-
-## [1.1.0] - 2025-12-19 (Upcoming)
-
-### Features
-
-- N/A
+## [1.1.0] - 2025-12-19
 
 ### Bug Fixes
 
-- **ServerCommandSource**: Removed command source caching for now because the current implementation was causing memory
-  leaks, will evaluate later if it's necessary making a new system or if we should remove this optimization
+- **ServerCommandSource**: Removed command source caching to prevent potential memory leaks.
 
 ## [1.0.0] - 2025-12-01
 
-### Features
-
-- N/A
-
 ### Bug Fixes
 
-- **SaccharineTreeFeature**: Now no longer crashes when removing an entity asynchronously.
-- **EmptyPokeBallEntity**: Prevents a NullPointerException that might occur in rare cases.
-- Fixes some crashes while ticking entities related to Cobblemon entities in FastUtil collections
+- **Saccharine Tree**: Fixed a server crash caused by asynchronous entity removal.
+- **Empty Poké Ball**: Fixed a crash (NullPointerException) when capturing Pokémon in edge cases.
+- **Entity Collections**: Fixed crashes while ticking Cobblemon entities in FastUtil collections.
 
 ### Optimizations
 
-- **PastureBlocks**: The tick is now optimized to avoid iterating over the entire PC. The PC position is now cached for
-  better performance.
-- **ShowdownId**: Now cached for faster access.
-- **Berry**: **BerryBlockEntity** no longer searches in a HashMap for a specific Berry type. The type of berry is now
-  cached.
-- **PC**: Now avoids duplicating `ArrayList`. Iterates using an iterator for better efficiency.
+- **Pasture Blocks**: Optimized Pasture Block ticking by caching PC positions to avoid scanning the entire PC.
+- **Showdown ID**: Added caching to speed up Pokémon ID lookups.
+- **Berry Blocks**: Improved berry handling by caching plant types and reducing unnecessary block updates.
+- **PC Storage**: Optimized PC box iteration to reduce memory duplication and lag.
