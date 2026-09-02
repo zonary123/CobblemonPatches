@@ -1,84 +1,78 @@
-# Cobblemon Performance Mixins
+# CobblemonPatches
 
-This mod improves **Cobblemon's performance** by using optimized **Mixins** to fix, adjust, and refactor
-internal behaviors of the base mod. Its goal is to provide a smoother, more stable, and efficient gameplay
-experience **without modifying gameplay mechanics or adding new content**.
+**CobblemonPatches** is a server and client optimization mod for **Cobblemon (Minecraft 1.21.1)**. It employs surgical **Mixins** to optimize hot paths, resolve memory leaks, fix critical crashes, and eliminate lag machines and duplication exploits—**all without altering core gameplay mechanics or removing features**.
 
 ---
 
-## 📌 Main Features
+## 📌 Key Highlights
 
-* 🚀 **Performance optimizations** across Cobblemon's internal systems
-* 🛠️ **Fixes for inefficient behaviors** in loops, calculations, or tick events
-* 📉 **Reduced server load** through improvements to frequently executed processes
-* ⚡ **Carefully crafted Mixins** to maintain compatibility without breaking features
-* 🔍 **Focus on stability** and efficient engine behavior
-
----
-
-## 🧩 What Does This Mod Improve?
-
-This mod targets code areas in Cobblemon that may cause:
-
-* High CPU usage
-* Expensive tick operations
-* Excessive entity or system load
-* Repetitive operations that can be optimized
-
-> Each Mixin is implemented surgically to act only where necessary.
+- 🚀 **High-Impact Optimizations**: Drastically cuts CPU usage and tick times across Campfire, Berry Blocks, PC storage, Pasture Blocks, Showdown IDs, MoveSet, and EVs serialization.
+- 🛡️ **Anti-Lag & Exploit Protection**: Eliminates snowball accumulation exploits (e.g. 100k+ lingering entities) and container duplication exploits.
+- 🐛 **Crash Preventions & Thread Safety**: Fixes Fossil Machine crashes, asynchronous entity removal crashes, and NullPointerExceptions on player disconnects.
+- ⚡ **Zero Gameplay Compromises**: Preserves 100% vanilla Cobblemon behavior, data structures, and compatibility.
+- 🔍 **Spark Profiling Friendly**: Method prefixes (`cobblemonPatches$`) allow easy tracking in Spark/async-profiler samplers.
 
 ---
 
-## 🖼️ Example Lag Sources Fixed
+## 🧩 Summary of Features & Patches
 
-Below are some issues this mod addresses:
+For a detailed technical breakdown of every patch, see [`FIXEDS.md`](FIXEDS.md).
+
+### 🚀 Performance & Memory
+* **🍳 Campfire Engine**: Caches recipe lookups and item fingerprints to bypass expensive per-tick recipe checks.
+* **🫐 Berry Blocks & Trees**: Early-cancels redundant stage timer ticks and caches berry types to eliminate HashMap lookups.
+* **🔑 Showdown & Form ID Caching**: Caches `showdownId` and `formOnlyShowdownId` on Pokémon, species, and forms.
+* **🧬 Aspect Set Construction**: Direct in-place `LinkedHashSet` generation, eliminating intermediate collection overhead.
+* **⚔️ MoveSet Iterator**: Non-allocating move iterator bypassing Kotlin `.filterNotNull()` list allocations.
+* **📊 EVs Serialization**: Serializes stats directly from backing maps without cloning to new `HashMap` instances.
+* **📦 PC Storage & Box Iterations**: Replaced full `ArrayList` duplication with stream-lined iterator lookups.
+* **🏞️ Pasture Blocks**: Caches tethered Pokémon `PCPosition` to avoid scanning entire PC boxes every tick.
+* **⚔️ Battle Registry & Queries**: Streamlined battle query checks (`isPvN`, `isPvP`, `isPvW`) and registry lookups.
+
+### 🛡️ Security & Anti-Exploit
+* **❄️ Snowball Anti-Lag**: Discards lingering snowballs exceeding 200 ticks (10s) or stagnant stationary projectiles (>40 ticks), preventing 100k+ entity lag attacks.
+* **📦 Gilded Chest Anti-Dupe**: Enforces strict distance checks (`canPlayerUse`) to prevent container duplication exploits.
+* **🗂️ Modular Exploit Architecture**: Structured modular package system (`lag`, `dupe`, `crash`) for server security.
+
+### 🐛 Stability & Bug Fixes
+* **🦕 Fossil Machine**: Fixed server crashes when inserting enchanted items or specific survival inventories.
+* **🎟️ ChunkTicketManager**: Fixed `NullPointerException` when players leave unregistered chunks.
+* **🔴 Empty Poké Ball**: Fixed `NullPointerException` during capture sequences when players disconnect mid-flight.
+* **🌳 Saccharine Tree**: Fixed asynchronous entity removal crashes on hybrid/multi-threaded servers.
+* **👥 Concurrency Safety**: Forces party Pokémon removal onto the main thread to prevent race conditions.
+
+---
+
+## 🖼️ Visual Examples of Addressed Issues
 
 ![PC Iterator](./img/storage/iteration_PC.png)
-*Inefficient iteration over a player’s PC or party can cause severe lag.*
+*Inefficient iteration over player PC boxes causing major server tick lag.*
 
 ![ShowdownId](./img/img.png)
-*Optimizes recalculation of Pokémon `showdownId` by caching values and clearing them only when necessary.*
+*Constant recalculation of Pokémon `showdownId` on hot paths.*
 
 ![Berry](./img/berry/berry_problem.png)
-*Improves berry handling by caching plants and reducing `markDirty` calls from every tick to once every 20 ticks.*
+*Berry blocks performing expensive state lookups and map queries on every tick.*
 
 ---
 
-## 🔧 Installation
+## 🔧 Installation & Requirements
 
-1. Ensure **Cobblemon** is installed
-2. Install a mixin-compatible mod loader (Fabric/Forge)
-3. Place this mod's `.jar` file in your `mods` folder
-4. Launch your server or client
-
----
-
-## 📄 Compatibility
-
-* Fully compatible with Cobblemon
-* Does **not** add new items, entities, or mechanics
-* Compatible with other mods, as long as they don’t modify the same code areas
+1. Ensure **Minecraft 1.21.1** and **Fabric Loader** (>= 0.16.x) are installed.
+2. Ensure **Cobblemon** (1.7.3+) is present in your `mods` folder.
+3. Place the `CobblemonPatches-x.x.x.jar` file into your `mods/` directory.
+4. Start your client or server.
 
 ---
 
-## 🤝 Contributing
+## 📄 Documentation & Links
 
-We welcome contributions to improve this mod! Please follow our official guidelines:
-
-* Read [`CONTRIBUTING.md`](CONTRIBUTING.md) for instructions on PRs, testing, and coding standards
-* Submit a Pull Request (PR) or open an issue for discussion
-* By contributing, you agree to the [Contributor License Agreement (CLA)](CLA.md)
-
-> Following these files ensures your contributions are safe, legal, and properly integrated.
+- 📋 [**Detailed Fixes & Improvements**](FIXEDS.md)
+- 📝 [**Changelog**](CHANGELOG.md)
+- 🤝 [**Contributing Guidelines**](CONTRIBUTING.md)
+- 📜 [**Contributor License Agreement (CLA)**](CLA.md)
+- ⚖️ [**License**](LICENSE)
 
 ---
 
-## 📜 License
-
-This project is distributed under **All Rights Reserved**, but contributions are accepted under the CLA.
-For more details, see [`CLA.md`](CLA.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md).
-
----
-
-✨ *This mod exists solely to deliver a faster, more stable, and improved Cobblemon experience for servers and players,
-while preserving the essence of the original mod.*
+✨ *Built with care to provide the cleanest, fastest, and most stable Cobblemon experience.*

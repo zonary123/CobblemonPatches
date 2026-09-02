@@ -3,7 +3,10 @@ package org.kingpixel.cobblemonpatches.mixins.cobblemon.berry;
 import com.cobblemon.mod.common.api.berry.Berries;
 import com.cobblemon.mod.common.api.berry.Berry;
 import com.cobblemon.mod.common.block.entity.BerryBlockEntity;
+import net.minecraft.block.BlockState;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -21,7 +24,6 @@ public abstract class BerryBlockEntityMixin {
   @Shadow public Identifier berryIdentifier;
   @Shadow private int stageTimer;
   @Unique private Berry berry;
-  @Unique private short ticks;
 
   @Inject(method = "berry", at = @At("HEAD"), cancellable = true)
   private void berryBlockMixin$Berry(CallbackInfoReturnable<Berry> cir) {
@@ -35,11 +37,21 @@ public abstract class BerryBlockEntityMixin {
   @Inject(method = "setStageTimer", at = @At("HEAD"), cancellable = true)
   private void berryBlockEntityMixin$SetStageTimer(int value, CallbackInfo ci) {
     this.stageTimer = value;
-    if (ticks < 20) {
-      ticks++;
+    if (value > 0) {
       ci.cancel();
-    } else {
-      ticks = 0;
+    }
+  }
+
+  @Inject(method = "TICKER$lambda$0", at = @At("HEAD"), cancellable = true)
+  private static void cobblemonPatches$optimizeTicker(World world, BlockPos pos, BlockState state, BerryBlockEntity blockEntity, CallbackInfo ci) {
+    if (world.isClient) {
+      ci.cancel();
+      return;
+    }
+    int timer = blockEntity.getStageTimer();
+    if (timer > 1) {
+      blockEntity.setStageTimer(timer - 1);
+      ci.cancel();
     }
   }
 

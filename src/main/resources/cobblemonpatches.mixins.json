@@ -8,7 +8,11 @@
     "async.EntityCallBackMixin",
     "async.PlayerManagerMixin",
     "async.ServerEntityManagerMixin",
+    "cobblemon.EVsMixin",
+    "cobblemon.FormDataMixin",
+    "cobblemon.MoveSetMixin",
     "cobblemon.PokemonMixin",
+    "cobblemon.PokemonStatsAccessor",
     "cobblemon.SpeciesMixin",
     "cobblemon.battles.BattleRegistryMixin",
     "cobblemon.battles.PokemonBattleMixin",
@@ -16,6 +20,8 @@
     "cobblemon.berry.BerryBlockMixin",
     "cobblemon.blockentity.FossilMultiblockStructureMixin",
     "cobblemon.blockentity.PokemonPastureBlockEntityTetheringMixin",
+    "cobblemon.campfire.CampfireBlockEntityAccessor",
+    "cobblemon.campfire.CampfireServerTickMixin",
     "cobblemon.dupe.GildedChestBlockEntityMixin",
     "cobblemon.entity.EmptyPokeballEntityMixin",
     "cobblemon.entity.PokemonEntityMixin",
@@ -24,7 +30,8 @@
     "cobblemon.storage.PCBoxMixin",
     "cobblemon.storage.PCStoreMixin",
     "cobblemon.storage.PokemonStoreMixin",
-    "cobblemon.things.SentOutStateMixin"
+    "cobblemon.things.SentOutStateMixin",
+    "exploits.lag.SnowballEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

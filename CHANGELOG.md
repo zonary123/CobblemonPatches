@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.1.4] - 02-09-2026
+
+> [!WARNING]
+> **Testing Required**: Please test this build thoroughly in a testing/staging environment before deploying to production servers.
+
+### Security & Anti-Lag
+
+- **Snowball**: Added `SnowballEntityMixin` to prevent server lag and memory exhaustion from infinite lingering snowballs (discarded after 200 ticks / 10s of flight or if stationary after 40 ticks).
+- **Exploits Module**: Created a structured package hierarchy under `org.kingpixel.cobblemonpatches.mixins.exploits` (`lag`, `dupe`, `crash`) for all anti-exploit, anti-dupe, and server protection patches.
+
+### Optimizations
+
+- **Campfire**: Optimized the `serverTick` of `CampfireBlockEntity` by caching recipe availability based on inventory item fingerprints, skipping expensive crafting inputs, assembly checks, and seasonings during inactive periods or mid-cook ticks.
+- **BerryBlockEntity**: Optimized the `setStageTimer` mixin to cancel early when the timer is still active (`value > 0`), completely bypassing unnecessary per-tick execution of `growHelper` and the expensive block state lookup (`State.get()`).
+- **ShowdownId**: Added `formOnlyShowdownId` and `showdownId` caching to `FormDataMixin` and optimized the caching logic in `PokemonMixin` and `SpeciesMixin`.
+- **Aspects**: Optimized `updateAspects` in `PokemonMixin` to directly construct and populate `LinkedHashSet` instead of performing expensive intermediate collection flattening and set copying.
+- **MoveSet**: Overrode `iterator()` in `MoveSet` to use a custom non-allocating iterator, bypassing intermediate list generation from Kotlin's `.filterNotNull()` during codec serialization/deserialization.
+- **EVs**: Overrode `getCODEC()` and `getSTREAM_CODEC()` in `EVs` with optimized versions that serialize directly using the backing `stats` map of `PokemonStats`, avoiding copying elements to a new `HashMap` on every serialization/sync.
+- **Profiling**: Renamed all showdown caching and aspect methods to use the `cobblemonPatches$` prefix for improved readability and tracking when profiling with Spark.
+
 ## [1.1.3] - 21-08-2026
 
 ### Improvements upon existing patches

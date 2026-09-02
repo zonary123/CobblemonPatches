@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 public class PatchesUtil {
 
-  private static final Logger LOGGER =
+  public static final Logger LOGGER =
     LoggerFactory.getLogger("AsyncCatcherFabric");
 
   public static void catchOp(String reason) {
