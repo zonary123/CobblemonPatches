@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.1.5] - 2026-09-06
+
+### Changed
+
+- **Cobblemon 1.8.0 Compatibility**: Updated compatibility and dependencies to support Cobblemon 1.8.0 (Minecraft 1.21.1).
+- **Performance Optimizations**: Improved campfire and Pokémon logic performance; added anti‑lag exploits module.
+- **Pasture Block Improvements**: Refactored implementation for better stability and efficiency.
+- **Null Entity Handling**: Fixed issues with null entity cases during tracking start/end operations.
+- **Thread Safety**: Ensured entity tracking operations run on the correct server thread.
+
+### Removed
+- **Berry Block Entity Mixin**: The mixin for berry block entities was removed.
+- **Gilded Chest Mixin**: The mixin handling gilded chest duplication was removed.
+- **Berry Blocks Optimization**: The previous berry blocks performance entry was removed.
+
 ## [1.1.4] - 02-09-2026
 
 > [!WARNING]
@@ -13,7 +28,6 @@
 ### Optimizations
 
 - **Campfires**: Significantly reduced server lag caused by campfires by skipping redundant recipe and cooking checks every tick.
-- **Berry Plants**: Reduced lag from berry plants by avoiding unnecessary tick updates and improving berry type lookups.
 - **Showdown IDs**: Improved performance when calculating Pokémon battle IDs by caching them.
 - **Pokémon Aspects**: Optimized how Pokémon visual aspects and forms are processed to lower memory usage.
 - **Moves & EVs**: Optimized Pokémon move lists and EV stat synchronization to reduce lag and memory allocation during saves and syncs.
@@ -38,7 +52,7 @@ Compatibility with Cobblemon 1.7.2 and 1.7.3
 ### Bug Fixes
 
 - **Fossil Machine**: Fixed a crash when inserting enchanted items into the machine in Survival.
-- **Gilded Chest**: Fixed an item duplication exploit with gilded chests.
+
 - **Fossil Machine**: Fixed a rare server crash during fossil operations.
 
 ## [1.1.0] - 2025-12-19
