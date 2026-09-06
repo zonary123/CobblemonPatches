@@ -14,6 +14,7 @@
     "cobblemon.PokemonMixin",
     "cobblemon.PokemonStatsAccessor",
     "cobblemon.SpeciesMixin",
+    "cobblemon.TypeGemCoreBlockMixin",
     "cobblemon.battles.BattleRegistryMixin",
     "cobblemon.battles.PokemonBattleMixin",
     "cobblemon.berry.BerryBlockMixin",

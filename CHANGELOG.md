@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.5] - 06-09-2026
+
+> [!WARNING]
+> **Testing Required**: Please test this build thoroughly in a testing/staging environment before deploying to
+> production servers.
+
+### Optimizations
+
+- **Type Gem Growth**: Significantly improved world generation speed and server performance by optimizing how Type Gem
+  Cores grow clusters, eliminating lag and memory overhead during chunk generation and random ticks.
+
 ## [1.1.4] - 02-09-2026
 
 > [!WARNING]
