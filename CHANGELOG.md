@@ -1,49 +1,57 @@
 # Changelog
 
-## [1.1.5] - 2026-09-06
+## [1.1.4] - 02-09-2026
+
+> [!WARNING]
+> **Testing Required**: Please test this build thoroughly in a testing/staging environment before deploying to
+> production servers.
+
+### Security & Anti-Lag
+
+- **Snowballs**: Fixed server lag caused by infinite lingering snowballs (automatically removes snowballs that are stuck
+  or flying for too long).
+- **Anti-Exploit System**: Added a structured module to organize and handle anti-lag, anti-dupe, and server security
+  patches.
+
+### Optimizations
+
+- **Campfires**: Significantly reduced server lag caused by campfires by skipping redundant recipe and cooking checks
+  every tick.
+- **Showdown IDs**: Improved performance when calculating Pokémon battle IDs by caching them.
+- **Pokémon Aspects**: Optimized how Pokémon visual aspects and forms are processed to lower memory usage.
+- **Moves & EVs**: Optimized Pokémon move lists and EV stat synchronization to reduce lag and memory allocation during
+  saves and syncs.
+- **Profiling**: Improved method naming to make performance tracking easier when profiling with Spark.
 
 ### Changed
 
-- **Cobblemon 1.8.0 Compatibility**: Updated compatibility and dependencies to support Cobblemon 1.8.0 (Minecraft 1.21.1).
-- **Performance Optimizations**: Improved campfire and Pokémon logic performance; added anti‑lag exploits module.
+- **Cobblemon 1.8.0 Compatibility**: Updated compatibility and dependencies to support Cobblemon 1.8.0 (Minecraft
+  1.21.1).
 - **Pasture Block Improvements**: Refactored implementation for better stability and efficiency.
+
+### Bug Fixes
+
 - **Null Entity Handling**: Fixed issues with null entity cases during tracking start/end operations.
 - **Thread Safety**: Ensured entity tracking operations run on the correct server thread.
 
 ### Removed
-- **Berry Block Entity Mixin**: The mixin for berry block entities was removed.
-- **Gilded Chest Mixin**: The mixin handling gilded chest duplication was removed.
-- **Berry Blocks Optimization**: The previous berry blocks performance entry was removed.
 
-## [1.1.4] - 02-09-2026
-
-> [!WARNING]
-> **Testing Required**: Please test this build thoroughly in a testing/staging environment before deploying to production servers.
-
-### Security & Anti-Lag
-
-- **Snowballs**: Fixed server lag caused by infinite lingering snowballs (automatically removes snowballs that are stuck or flying for too long).
-- **Anti-Exploit System**: Added a structured module to organize and handle anti-lag, anti-dupe, and server security patches.
-
-### Optimizations
-
-- **Campfires**: Significantly reduced server lag caused by campfires by skipping redundant recipe and cooking checks every tick.
-- **Showdown IDs**: Improved performance when calculating Pokémon battle IDs by caching them.
-- **Pokémon Aspects**: Optimized how Pokémon visual aspects and forms are processed to lower memory usage.
-- **Moves & EVs**: Optimized Pokémon move lists and EV stat synchronization to reduce lag and memory allocation during saves and syncs.
-- **Profiling**: Improved method naming to make performance tracking easier when profiling with Spark.
+- **Berry Block Entity Mixin**: Removed the berry block entity mixin and its performance optimizations.
+- **Gilded Chest Mixin**: Removed the mixin handling gilded chest duplication.
 
 ## [1.1.3] - 21-08-2026
 
 ### Improvements upon existing patches
 
-- **PastureBlocks**: PC positions of tethered Pokémon are now retrieved directly instead of manually searching the entire PC.
+- **PastureBlocks**: PC positions of tethered Pokémon are now retrieved directly instead of manually searching the
+  entire PC.
 
 ## [1.1.2] - 25-06-2026
 
 ### Bug Fixes
 
-- **ChunkTicketManager**: Fixed a crash (NullPointerException) that occurred when a player disconnected or changed dimensions from an unregistered chunk.
+- **ChunkTicketManager**: Fixed a crash (NullPointerException) that occurred when a player disconnected or changed
+  dimensions from an unregistered chunk.
 
 ## [1.1.1] - 26-01-2026
 
