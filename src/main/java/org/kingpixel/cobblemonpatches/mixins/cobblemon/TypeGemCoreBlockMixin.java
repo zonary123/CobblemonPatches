@@ -6,6 +6,7 @@ import com.cobblemon.mod.common.block.TypeGemCoreBlock;
 import kotlin.Pair;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -129,7 +130,12 @@ public abstract class TypeGemCoreBlockMixin {
         .with(TypeGemClusterBlock.Companion.getSTAGE(), 0)
         .with(TypeGemClusterBlock.Companion.getSHOULD_GROW(), true)
         .with(TypeGemClusterBlock.Companion.getSTUNTED(), false);
-    level.setBlockState(targetPos, placeState, Block.NOTIFY_ALL);
+    level.setBlockState(targetPos, placeState, getUpdateFlags(level));
+  }
+
+  @Unique
+  private static int getUpdateFlags(WorldAccess level) {
+    return level instanceof ServerWorld ? Block.NOTIFY_ALL : Block.NOTIFY_LISTENERS;
   }
 
   @Unique
@@ -194,7 +200,7 @@ public abstract class TypeGemCoreBlockMixin {
       if (updated.contains(growProp)) {
         updated = updated.with(growProp, !stunted);
       }
-      level.setBlockState(neighborPos, updated, Block.NOTIFY_ALL);
+      level.setBlockState(neighborPos, updated, getUpdateFlags(level));
     }
   }
 
