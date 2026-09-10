@@ -20,6 +20,7 @@ public abstract class SpeciesMixin {
   private void cobblemonPatches$headShowdownId(CallbackInfoReturnable<String> cir) {
     if (showdownIdCache != null) {
       cir.setReturnValue(showdownIdCache);
+      
     }
   }
 

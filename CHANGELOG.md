@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.1.7] - 10-09-2026
+
+> [!WARNING]
+> **Testing Required**: Please test this build thoroughly in a testing/staging environment before deploying to
+> production servers.
+
+### Added
+
+- **Move Suggestions in Commands**: Added autocomplete suggestions for the `moves` property in commands like `/pokegive`, `/pokespawn`, and `/pokemonedit`. Players can now easily tab-complete up to 4 moves separated by commas (e.g. `moves=tackle,growl,scratch`).
+- **Server-Only Support**: Works 100% server-side. Players connecting with vanilla Cobblemon will automatically get full move suggestions without needing any client-side mods installed.
+
+### Optimizations
+
+- **Autocompletion Performance**: Optimized move list caching and text parsing to ensure instant suggestion popups with zero server lag.
+
+## [1.1.6] - 06-09-2026
+
+> [!WARNING]
+> **Testing Required**: Please test this build thoroughly in a testing/staging environment before deploying to
+> production servers.
+
+### Bug Fixes
+
+- **Scoreboard Team Desync**: Fixed a client and server crash (`IllegalStateException`) caused when removing players or
+  entities from scoreboard teams that were already cleared or desynchronized.
+
 ## [1.1.5] - 06-09-2026
 
 > [!WARNING]

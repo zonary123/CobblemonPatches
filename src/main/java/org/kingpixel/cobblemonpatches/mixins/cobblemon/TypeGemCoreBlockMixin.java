@@ -85,6 +85,7 @@ public abstract class TypeGemCoreBlockMixin {
         continue;
       }
 
+
       int newGemCount = tryGrowFromGem(level, gemPos, clusterBlock, random, forced, gemCount);
       if (newGemCount > 0) {
         return new Pair<>(true, newGemCount);
@@ -126,10 +127,10 @@ public abstract class TypeGemCoreBlockMixin {
   private static void placeClusterBlock(StructureWorldAccess level, BlockPos targetPos,
                                         TypeGemClusterBlock clusterBlock, Direction dir) {
     BlockState placeState = clusterBlock.getDefaultState()
-        .with(TypeGemClusterBlock.Companion.getFACING(), dir)
-        .with(TypeGemClusterBlock.Companion.getSTAGE(), 0)
-        .with(TypeGemClusterBlock.Companion.getSHOULD_GROW(), true)
-        .with(TypeGemClusterBlock.Companion.getSTUNTED(), false);
+      .with(TypeGemClusterBlock.Companion.getFACING(), dir)
+      .with(TypeGemClusterBlock.Companion.getSTAGE(), 0)
+      .with(TypeGemClusterBlock.Companion.getSHOULD_GROW(), true)
+      .with(TypeGemClusterBlock.Companion.getSTUNTED(), false);
     level.setBlockState(targetPos, placeState, getUpdateFlags(level));
   }
 

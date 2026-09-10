@@ -13,6 +13,8 @@
     "cobblemon.MoveSetMixin",
     "cobblemon.PokemonMixin",
     "cobblemon.PokemonStatsAccessor",
+    "cobblemon.PropertiesCompletionProviderMixin",
+    "cobblemon.command.ArgumentCommandNodeMixin",
     "cobblemon.SpeciesMixin",
     "cobblemon.TypeGemCoreBlockMixin",
     "cobblemon.battles.BattleRegistryMixin",
@@ -30,7 +32,8 @@
     "cobblemon.storage.PCStoreMixin",
     "cobblemon.storage.PokemonStoreMixin",
     "cobblemon.things.SentOutStateMixin",
-    "exploits.lag.SnowballEntityMixin"
+    "exploits.lag.SnowballEntityMixin",
+    "scoreboard.ScoreboardMixin"
   ],
   "injectors": {
     "defaultRequire": 1
