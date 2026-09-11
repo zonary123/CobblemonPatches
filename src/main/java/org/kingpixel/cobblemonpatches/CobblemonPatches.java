@@ -19,6 +19,7 @@ public class CobblemonPatches implements ModInitializer {
       📦 PCBox and PCStore iterator optimizations are active.
       ⚔️ Optimizations for PokemonBattle's isPvN(), isPvP(), and isPvW() are enabled.
       Optimization PatureBlocks.
+      👤 Asynchronous loading and caching for NPC player textures are enabled.
       """);
     events();
 

@@ -42,6 +42,10 @@ A comprehensive list of all optimizations, bug fixes, crash preventions, and ant
 - **Problem**: Battle queries (`isPvN()`, `isPvP()`, `isPvW()`) and registry lookups performed redundant state evaluations.
 - **Solution**: Optimized query paths and registry lookups for smoother battle processing.
 
+### 👤 NPC Player Texture Async Loading & Caching (`NPCEntityMixin`)
+- **Problem**: `NPCEntity#loadTextureFromGameProfileName` executed synchronous blocking HTTP calls (`GameProfileRepository#findProfilesByNames`, `MinecraftSessionService#fetchProfile`, `URL#openStream`) on the server thread, causing severe server tick freezes (over 1200ms per lookup).
+- **Solution**: Implemented two-tier in-memory caching (Caffeine) for player textures (`username -> NPCPlayerTexture`) and skin byte streams (`URI -> byte[]`), combined with in-flight lookup deduplication and asynchronous background network I/O with timeouts.
+
 ---
 
 ## 🛡️ Security, Exploits & Anti-Lag

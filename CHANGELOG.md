@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.8] - 11-09-2026
+
+> [!WARNING]
+> **Testing Required**: Please test this build thoroughly in a testing/staging environment before deploying to
+> production servers.
+
+### Optimizations & Anti-Lag
+
+- **Asynchronous NPC Player Texture Loading**: Fixed massive server tick stalls and lag spikes (e.g. 1000ms+ freezes) caused by `NPCEntity#loadTextureFromGameProfileName` performing synchronous Mojang API and session profile lookups directly on the main server thread.
+- **Dual-Layer Texture Caching**: Implemented high-performance Caffeine in-memory caching for resolved player profile textures (`username -> NPCPlayerTexture`) and downloaded skin image payloads (`URI -> byte[]`), completely eliminating redundant web requests.
+- **In-Flight Lookup Deduplication**: Added concurrent deduplication for in-flight profile texture lookups to prevent parallel requests when multiple NPCs with the same player skin spawn simultaneously.
+- **Network I/O Safety & Timeouts**: Offloaded all external HTTP requests to worker I/O threads with strict connect and read timeouts to prevent thread starvation and server hangs.
+
 ## [1.1.7] - 10-09-2026
 
 > [!WARNING]

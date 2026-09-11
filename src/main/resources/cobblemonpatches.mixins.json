@@ -25,6 +25,7 @@
     "cobblemon.campfire.CampfireBlockEntityAccessor",
     "cobblemon.campfire.CampfireServerTickMixin",
     "cobblemon.entity.EmptyPokeballEntityMixin",
+    "cobblemon.entity.NPCEntityMixin",
     "cobblemon.entity.PokemonEntityMixin",
     "cobblemon.network.ChallengeHandlerMixin",
     "cobblemon.network.ServerboundUpdateRidingStateHandlerMixin",
