@@ -8,10 +8,10 @@
 
 ### Optimizations & Anti-Lag
 
-- **Asynchronous NPC Player Texture Loading**: Fixed massive server tick stalls and lag spikes (e.g. 1000ms+ freezes) caused by `NPCEntity#loadTextureFromGameProfileName` performing synchronous Mojang API and session profile lookups directly on the main server thread.
-- **Dual-Layer Texture Caching**: Implemented high-performance Caffeine in-memory caching for resolved player profile textures (`username -> NPCPlayerTexture`) and downloaded skin image payloads (`URI -> byte[]`), completely eliminating redundant web requests.
-- **In-Flight Lookup Deduplication**: Added concurrent deduplication for in-flight profile texture lookups to prevent parallel requests when multiple NPCs with the same player skin spawn simultaneously.
-- **Network I/O Safety & Timeouts**: Offloaded all external HTTP requests to worker I/O threads with strict connect and read timeouts to prevent thread starvation and server hangs.
+- **Eliminated Server Freezes from NPC Skins**: When NPCs with custom player skins appear in the world (such as Gym Leaders, shopkeepers, quest NPCs, or town villagers), the server used to completely freeze for 1 to 2 seconds while downloading the skin from the internet. Skin loading now happens silently in the background with zero lag spikes.
+- **Smart Skin Memory (Instant Reuse)**: Once a player skin is downloaded for an NPC, it is saved in fast memory. If the same skin is used by multiple NPCs (like identical shopkeepers or trainers), the skin is applied instantly without any repeated web downloads.
+- **Lag-Free Skin Commands & Quests**: Using `/applyplayertexture` or changing NPC skins during dialogue trees and quest scripts no longer causes server hitching or TPS drops.
+- **Protection Against Slow Skin Servers**: Added automatic timeouts so that even if Mojang's skin servers are slow, laggy, or temporarily offline, your server will never hang or freeze.
 
 ## [1.1.7] - 10-09-2026
 
