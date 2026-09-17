@@ -2,12 +2,15 @@ package org.kingpixel.cobblemonpatches.mixins.cobblemon;
 
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
 import com.cobblemon.mod.common.api.events.pokemon.PokemonAspectsChangedEvent;
+import com.cobblemon.mod.common.api.moves.MoveSet;
 import com.cobblemon.mod.common.api.pokemon.aspect.AspectProvider;
+import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.net.messages.client.PokemonUpdatePacket;
 import com.cobblemon.mod.common.net.messages.client.pokemon.update.AspectsUpdatePacket;
 import com.cobblemon.mod.common.pokemon.FormData;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
+import com.cobblemon.mod.common.pokemon.status.PersistentStatusContainer;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -29,6 +32,14 @@ public abstract class PokemonMixin {
   @Shadow private Set<String> aspects;
   @Shadow private Set<String> forcedAspects;
   @Shadow public abstract boolean isWild();
+  @Shadow public abstract boolean isFainted();
+  @Shadow public abstract void setCurrentHealth(int value);
+  @Shadow public abstract int getMaxHealth();
+  @Shadow public abstract MoveSet getMoveSet();
+  @Shadow public abstract void setStatus(PersistentStatusContainer status);
+  @Shadow public abstract void setFaintedTimer(int value);
+  @Shadow public abstract void setHealTimer(int value);
+  @Shadow public abstract PokemonEntity getEntity();
   @Shadow public abstract UUID getOwnerUUID();
   @Shadow public abstract void updateForm();
   @Shadow public abstract void onChange(PokemonUpdatePacket<?> packet);
@@ -58,6 +69,28 @@ public abstract class PokemonMixin {
   @Inject(method = "setForm", at = @At("HEAD"))
   private void cobblemonPatches$onSetForm(FormData value, CallbackInfo ci) {
     showdownIdCache = null;
+  }
+
+  /**
+   * {@code heal()} runs HP/PP/{@code faintedTimer} only inside {@code POKEMON_HEALED.postThen}.
+   * If that event is cancelled, fainted party Pokémon stay fainted while injured ones
+   * still heal (they are not fainted when the event fires). Revive items use
+   * {@code amount > 0}; the passive timer writes {@code currentHealth} directly.
+   */
+  @Inject(method = "heal", at = @At("RETURN"))
+  private void cobblemonPatches$reviveIfHealEventCancelled(CallbackInfo ci) {
+    if (this.isClient || this.isWild() || !this.isFainted()) {
+      return;
+    }
+    this.setCurrentHealth(this.getMaxHealth());
+    this.getMoveSet().heal();
+    this.setStatus(null);
+    this.setFaintedTimer(-1);
+    this.setHealTimer(-1);
+    PokemonEntity entity = this.getEntity();
+    if (entity != null) {
+      entity.heal(entity.getMaxHealth() - entity.getHealth());
+    }
   }
 
   @Inject(method = "updateAspects", at = @At("HEAD"), cancellable = true)
