@@ -1,5 +1,6 @@
 package org.kingpixel.cobblemonpatches.mixins.cobblemon.entity;
 
+import com.bedrockk.molang.runtime.struct.VariableStruct;
 import com.bedrockk.molang.runtime.value.StringValue;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.entity.npc.NPCEntity;
@@ -12,17 +13,21 @@ import com.mojang.authlib.ProfileLookupCallback;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import com.mojang.authlib.minecraft.MinecraftProfileTextures;
 import com.mojang.authlib.yggdrasil.ProfileResult;
+import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.PassiveEntity;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Util;
 import net.minecraft.world.World;
+import org.kingpixel.cobblemonpatches.CobblemonPatches;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -30,11 +35,16 @@ import java.net.URLConnection;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-@Mixin(NPCEntity.class)
+/**
+ * Mixin into {@link NPCEntity} providing asynchronous skin downloading,
+ * Caffeine profile texture caching, and per-tick player visibility memoization.
+ */
+@Mixin(value = NPCEntity.class, remap = false)
 public abstract class NPCEntityMixin extends PassiveEntity {
 
   @Shadow(remap = false)
@@ -44,27 +54,54 @@ public abstract class NPCEntityMixin extends PassiveEntity {
   public abstract void updateAspects();
 
   @Shadow(remap = false)
-  public abstract com.bedrockk.molang.runtime.struct.VariableStruct getData();
+  public abstract VariableStruct getData();
 
+  /**
+   * Caffeine cache storing resolved {@link NPCPlayerTexture} by lowercase player username.
+   */
   @Unique
   private static final Cache<String, NPCPlayerTexture> cobblemonpatches$PROFILE_TEXTURE_CACHE = Caffeine.newBuilder()
-    .maximumSize(1000)
+    .maximumSize(500)
     .expireAfterAccess(1, TimeUnit.DAYS)
     .build();
 
+  /**
+   * Caffeine cache storing raw downloaded texture byte arrays by URI string.
+   */
   @Unique
   private static final Cache<String, byte[]> cobblemonpatches$URI_CACHE = Caffeine.newBuilder()
     .maximumSize(1000)
     .expireAfterAccess(1, TimeUnit.DAYS)
     .build();
 
+  /**
+   * Map of in-flight asynchronous texture lookups to prevent duplicate concurrent network queries.
+   */
   @Unique
   private static final ConcurrentHashMap<String, CompletableFuture<NPCPlayerTexture>> cobblemonpatches$PENDING_LOOKUPS = new ConcurrentHashMap<>();
 
+  @Unique
+  private long cobblemonpatches$lastHideCheckTick = -1L;
+
+  @Unique
+  private final Object2BooleanOpenHashMap<UUID> cobblemonpatches$playerHideCache = new Object2BooleanOpenHashMap<>();
+
+  /**
+   * Protected entity constructor.
+   *
+   * @param entityType entity type
+   * @param world      world level
+   */
   protected NPCEntityMixin(EntityType<? extends PassiveEntity> entityType, World world) {
     super(entityType, world);
   }
 
+  /**
+   * Asynchronously resolves and applies player skin texture by username with Caffeine caching.
+   *
+   * @param username Minecraft player username
+   * @param ci       callback info
+   */
   @Inject(method = "loadTextureFromGameProfileName", at = @At("HEAD"), cancellable = true, remap = false)
   private void cobblemonpatches$loadTextureFromGameProfileName(String username, CallbackInfo ci) {
     ci.cancel();
@@ -78,6 +115,9 @@ public abstract class NPCEntityMixin extends PassiveEntity {
 
     NPCPlayerTexture cached = cobblemonpatches$PROFILE_TEXTURE_CACHE.getIfPresent(cacheKey);
     if (cached != null) {
+      if (CobblemonPatches.getConfig().isDebug()) {
+        CobblemonPatches.LOGGER.info("[NPCEntity] Using cached profile texture for '{}'", trimmedName);
+      }
       cobblemonpatches$applyTexture(cached, trimmedName);
       return;
     }
@@ -92,6 +132,9 @@ public abstract class NPCEntityMixin extends PassiveEntity {
         if (npcTexture != null) {
           currentServer.execute(() -> {
             if (this.isAlive() && !this.isRemoved()) {
+              if (CobblemonPatches.getConfig().isDebug()) {
+                CobblemonPatches.LOGGER.info("[NPCEntity] Applied asynchronously fetched texture for '{}'", trimmedName);
+              }
               cobblemonpatches$applyTexture(npcTexture, trimmedName);
             }
           });
@@ -99,6 +142,13 @@ public abstract class NPCEntityMixin extends PassiveEntity {
       });
   }
 
+  /**
+   * Asynchronously downloads and applies texture data from an arbitrary URI with caching.
+   *
+   * @param uri   texture URI
+   * @param model NPC player model type
+   * @param ci    callback info
+   */
   @Inject(method = "loadTexture", at = @At("HEAD"), cancellable = true, remap = false)
   private void cobblemonpatches$loadTexture(URI uri, NPCPlayerModelType model, CallbackInfo ci) {
     ci.cancel();
@@ -110,6 +160,9 @@ public abstract class NPCEntityMixin extends PassiveEntity {
     String urlStr = uri.toString();
     byte[] cachedBytes = cobblemonpatches$URI_CACHE.getIfPresent(urlStr);
     if (cachedBytes != null) {
+      if (CobblemonPatches.getConfig().isDebug()) {
+        CobblemonPatches.LOGGER.info("[NPCEntity] Using cached URI texture for '{}'", urlStr);
+      }
       cobblemonpatches$applyModelAndAspects(cachedBytes, model);
       return;
     }
@@ -127,6 +180,14 @@ public abstract class NPCEntityMixin extends PassiveEntity {
     }, Util.getIoWorkerExecutor());
   }
 
+  /**
+   * Dispatches an asynchronous player game profile lookup and subsequent texture fetch.
+   *
+   * @param server   Minecraft server instance
+   * @param username player username
+   * @param cacheKey lowercase cache key
+   * @return future delivering the resolved texture or null
+   */
   @Unique
   private static CompletableFuture<NPCPlayerTexture> cobblemonpatches$fetchPlayerTextureAsync(
     MinecraftServer server,
@@ -166,6 +227,15 @@ public abstract class NPCEntityMixin extends PassiveEntity {
     return future;
   }
 
+  /**
+   * Downloads and constructs an {@link NPCPlayerTexture} from a Mojang session profile result.
+   *
+   * @param server   Minecraft server
+   * @param profile  game profile
+   * @param username player username
+   * @param cacheKey lowercase cache key
+   * @param future   completion future
+   */
   @Unique
   private static void cobblemonpatches$resolveProfileTextures(
     MinecraftServer server,
@@ -207,6 +277,12 @@ public abstract class NPCEntityMixin extends PassiveEntity {
     }
   }
 
+  /**
+   * Parses model type from metadata string, falling back to DEFAULT.
+   *
+   * @param modelMetadata model metadata string (e.g. slim)
+   * @return resolved model type enum
+   */
   @Unique
   private static NPCPlayerModelType cobblemonpatches$parseModelType(String modelMetadata) {
     String modelStr = (modelMetadata != null ? modelMetadata : "default").toUpperCase(Locale.ROOT);
@@ -217,6 +293,13 @@ public abstract class NPCEntityMixin extends PassiveEntity {
     }
   }
 
+  /**
+   * Retrieves texture bytes from URI cache or downloads them if not cached.
+   *
+   * @param uri    texture URI
+   * @param urlStr string representation of URI
+   * @return byte array or null
+   */
   @Unique
   private static byte[] cobblemonpatches$getOrDownloadUriBytes(URI uri, String urlStr) {
     byte[] cachedBytes = cobblemonpatches$URI_CACHE.getIfPresent(urlStr);
@@ -232,12 +315,24 @@ public abstract class NPCEntityMixin extends PassiveEntity {
     return null;
   }
 
+  /**
+   * Cleans pending lookup state and completes future with null on failure.
+   *
+   * @param cacheKey cache key
+   * @param future   completable future
+   */
   @Unique
   private static void cobblemonpatches$failPendingLookup(String cacheKey, CompletableFuture<NPCPlayerTexture> future) {
     cobblemonpatches$PENDING_LOOKUPS.remove(cacheKey);
     future.complete(null);
   }
 
+  /**
+   * Synchronously downloads raw texture bytes over HTTP connection.
+   *
+   * @param uri download target URI
+   * @return raw byte content or null
+   */
   @Unique
   private static byte[] cobblemonpatches$downloadTextureBytes(URI uri) {
     try {
@@ -253,12 +348,24 @@ public abstract class NPCEntityMixin extends PassiveEntity {
     }
   }
 
+  /**
+   * Applies the downloaded player texture and updates Molang username variable.
+   *
+   * @param playerTexture player texture wrapper
+   * @param username      player username
+   */
   @Unique
   private void cobblemonpatches$applyTexture(NPCPlayerTexture playerTexture, String username) {
     cobblemonpatches$applyModelAndAspects(playerTexture.getTexture(), playerTexture.getModel());
     this.getData().setDirectly("player_texture_username", new StringValue(username));
   }
 
+  /**
+   * Applies skin model aspect and updates NPC data tracker.
+   *
+   * @param bytes raw texture bytes
+   * @param model player model type
+   */
   @Unique
   private void cobblemonpatches$applyModelAndAspects(byte[] bytes, NPCPlayerModelType model) {
     this.getAppliedAspects().remove("model-default");
@@ -266,5 +373,40 @@ public abstract class NPCEntityMixin extends PassiveEntity {
     this.getAppliedAspects().add("model-" + model.name().toLowerCase(Locale.ROOT));
     this.getDataTracker().set(NPCEntity.Companion.getNPC_PLAYER_TEXTURE(), new NPCPlayerTexture(bytes, model));
     this.updateAspects();
+  }
+
+  /**
+   * Returns per-tick memoized visibility decision for the player if available.
+   *
+   * @param player player to evaluate
+   * @param cir    callback returnable
+   */
+  @Inject(method = "shouldHideFrom", at = @At("HEAD"), cancellable = true, remap = false)
+  private void cobblemonPatches$cachedShouldHideFrom(ServerPlayerEntity player, CallbackInfoReturnable<Boolean> cir) {
+    if (player == null) {
+      cir.setReturnValue(false);
+      return;
+    }
+
+    long currentTick = this.getWorld().getTime();
+    if (this.cobblemonpatches$lastHideCheckTick != currentTick) {
+      this.cobblemonpatches$lastHideCheckTick = currentTick;
+      this.cobblemonpatches$playerHideCache.clear();
+    } else if (this.cobblemonpatches$playerHideCache.containsKey(player.getUuid())) {
+      cir.setReturnValue(this.cobblemonpatches$playerHideCache.getBoolean(player.getUuid()));
+    }
+  }
+
+  /**
+   * Caches calculated player visibility for the remainder of the current server tick.
+   *
+   * @param player player evaluated
+   * @param cir    callback returnable
+   */
+  @Inject(method = "shouldHideFrom", at = @At("RETURN"), remap = false)
+  private void cobblemonPatches$cacheShouldHideFrom(ServerPlayerEntity player, CallbackInfoReturnable<Boolean> cir) {
+    if (player != null) {
+      this.cobblemonpatches$playerHideCache.put(player.getUuid(), cir.getReturnValueZ());
+    }
   }
 }

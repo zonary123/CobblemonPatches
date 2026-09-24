@@ -23,6 +23,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
+ * Mixin into {@link PropertiesCompletionProvider} to dynamically populate and provide command
+ * autocompletion suggestions for Pokémon moves, restricting suggestions to available slots (up to 4 moves).
+ *
  * @author Carlos Varas Alonso
  */
 @Mixin(value = PropertiesCompletionProvider.class, remap = false)
@@ -41,12 +44,23 @@ public abstract class PropertiesCompletionProviderMixin {
   @Shadow
   public abstract void inject(Iterable<String> keys, Collection<String> suggestions);
 
+  /**
+   * Triggers move provider population after default property providers are added.
+   *
+   * @param ci callback info
+   */
   @Inject(method = "addDefaults", at = @At("RETURN"))
   private void cobblemonPatches$addMovesToDefaults(CallbackInfo ci) {
     cobblemonPatches$movesPopulated = false;
     cobblemonPatches$populateMoves();
   }
 
+  /**
+   * Ensures moves are populated prior to syncing suggestions with a player.
+   *
+   * @param player the player entity receiving completion suggestions
+   * @param ci     callback info
+   */
   @Inject(method = "sync", at = @At("HEAD"))
   private void cobblemonPatches$syncMoves(ServerPlayerEntity player, CallbackInfo ci) {
     if (!cobblemonPatches$movesPopulated) {
@@ -54,6 +68,9 @@ public abstract class PropertiesCompletionProviderMixin {
     }
   }
 
+  /**
+   * Registers all known Cobblemon move names into the suggestion provider registry.
+   */
   @Unique
   private void cobblemonPatches$populateMoves() {
     Collection<String> moveNames = Moves.names();
@@ -67,6 +84,15 @@ public abstract class PropertiesCompletionProviderMixin {
     cobblemonPatches$movesPopulated = true;
   }
 
+  /**
+   * Intercepts property value suggestions for moves, handling comma-separated lists
+   * and enforcing the maximum 4-move constraint.
+   *
+   * @param key          the property key being completed
+   * @param currentValue the input string typed so far
+   * @param builder      the Brigadier suggestions builder
+   * @param cir          the callback returnable with the future suggestions
+   */
   @Inject(method = "suggestValues", at = @At("HEAD"), cancellable = true)
   private void cobblemonPatches$suggestMovesValues(
       String key,
@@ -86,7 +112,6 @@ public abstract class PropertiesCompletionProviderMixin {
     int lastCommaIndex = currentValue.lastIndexOf(',');
     Set<String> chosenMoves = extractChosenMoves(currentValue, lastCommaIndex);
 
-    // A Pokémon can have at most 4 moves in a moveset.
     if (chosenMoves.size() >= 4) {
       cir.setReturnValue(builder.buildFuture());
       return;
@@ -100,6 +125,13 @@ public abstract class PropertiesCompletionProviderMixin {
     cir.setReturnValue(builder.buildFuture());
   }
 
+  /**
+   * Extracts the set of already selected move identifiers from a comma-separated input string.
+   *
+   * @param currentValue   the raw property value input
+   * @param lastCommaIndex the index of the last comma separator
+   * @return a set containing already typed moves in lowercase
+   */
   @Unique
   private static Set<String> extractChosenMoves(String currentValue, int lastCommaIndex) {
     if (lastCommaIndex == -1) {
@@ -122,6 +154,14 @@ public abstract class PropertiesCompletionProviderMixin {
     return chosen;
   }
 
+  /**
+   * Appends matching move suggestions to the Brigadier builder, excluding already selected moves.
+   *
+   * @param moveNames         the pool of all valid move names
+   * @param chosenMoves       the set of already typed moves
+   * @param currentMovePrefix the prefix currently being typed for the active slot
+   * @param builder           the Brigadier suggestions builder
+   */
   @Unique
   private static void suggestAvailableMoves(
       Collection<String> moveNames,

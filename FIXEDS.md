@@ -46,6 +46,34 @@ A comprehensive list of all optimizations, bug fixes, crash preventions, and ant
 - **Problem**: `NPCEntity#loadTextureFromGameProfileName` executed synchronous blocking HTTP calls (`GameProfileRepository#findProfilesByNames`, `MinecraftSessionService#fetchProfile`, `URL#openStream`) on the server thread, causing severe server tick freezes (over 1200ms per lookup).
 - **Solution**: Implemented two-tier in-memory caching (Caffeine) for player textures (`username -> NPCPlayerTexture`) and skin byte streams (`URI -> byte[]`), combined with in-flight lookup deduplication and asynchronous background network I/O with timeouts.
 
+### ⏱️ Paper-Style Tick-Spreading Autosave (`FileBackedPokemonStoreFactoryMixin`)
+- **Problem**: Saving player storage accumulated all dirty party and PC stores and serialized them synchronously on the server thread in a single tick every save interval, causing 600ms+ lag spikes.
+- **Solution**: Distributes dirty store serialization across ticks incrementally (1-2 stores per tick), smoothing out CPU usage and eliminating autosave lag spikes completely.
+
+### ⚡ Fast-Path & DFU Bypass DataFixerCodec (`CobblemonDataFixerCodecMixin`)
+- **Problem**: `CobblemonDataFixerCodec` cloned full NBT compounds on encode to insert version metadata and always ran DFU updates and field removals on decode even when data was already at current version.
+- **Solution**: Injects version metadata directly in-place on encode and bypasses DFU and NBT field manipulation entirely on decode when `inputVersion >= DATA_VERSION`.
+
+### 👥 Entity Cramming & Owner Resolution Optimization (`PokemonEntityMixin`)
+- **Problem**: During entity cramming and collision checks, `getScoreboardTeam()` and `getOwner()` searched the server's global player manager by UUID dozens of times per entity per tick, even for wild Pokémon.
+- **Solution**: Short-circuits owner lookups for wild Pokémon and caches resolved owner entities per-tick on `PokemonEntity`.
+
+### 🌿 Spawning Pipeline Tag & Identifier Condition Memoization (`RegistryLikeTagConditionMixin`, `RegistryLikeIdentifierConditionMixin`)
+- **Problem**: In `FlatSpawnablePositionWeightedSelector.select()` and `Spawner.getMatchingSpawns()`, Cobblemon tests hundreds of spawn detail conditions against every position in the spawning zone. `RegistryLikeTagCondition.fits()` evaluated `t.isIn(tag)` continuously, triggering thousands of `ImmutableCollections$SetN.contains()` and `TagKey.equals()` comparisons per tick.
+- **Solution**: Implemented thread-safe $O(1)$ concurrent memoization caches on `RegistryLikeTagCondition` and `RegistryLikeIdentifierCondition`. Once a registry entry (e.g., `minecraft:grass_block` or `minecraft:plains`) is evaluated against a tag or identifier condition, subsequent checks during the spawning pass hit the cache in $O(1)$ time, eliminating the largest CPU consumer in Cobblemon's spawning logic.
+
+### ⏳ Optimized Entity Aging Despawner (`CobblemonAgingDespawnerMixin`)
+- **Problem**: `CobblemonAgingDespawner.shouldDespawn()` executed every tick for every active Pokémon entity in the world, iterating through all world players and executing `Math.sqrt` distance calculations continuously (taking 1.30% / 3.9s of total server CPU).
+- **Solution**: Throttled despawn checks to 1-second intervals (every 20 ticks) and implemented squared-distance comparisons (`squaredDistanceTo`) with early-exit near-boundary checks, reducing player list iterations and distance calculations by 95%+.
+
+### 🖥️ Throttled PC & Pasture Block Entity Tickers (`PCBlockEntityTickerMixin`, `PokemonPastureBlockEntityTickerMixin`)
+- **Problem**: Every PC block and Pasture block placed in loaded chunks executed `getInRangeViewerCount()` on every single server tick (20 Hz) to toggle cosmetic blockstate lights (`ON`), continuously iterating through all players in the dimension and consuming ~0.42% CPU on idle blocks.
+- **Solution**: Throttled viewer count evaluations to once every 20 ticks (1 second), distributed across ticks by block position hash to eliminate tick stalls and reduce idle player scans by 95% while keeping visual states responsive.
+
+### 👤 Per-Tick NPC Visibility Cache (`NPCEntityMixin`)
+- **Problem**: `NPCEntity#shouldHideFrom` re-queried and parsed player MoLang data and permissions on every spectator and visibility check (`canBeSpectated`), consuming 0.29% CPU on redundant evaluations for the same player-NPC pairs.
+- **Solution**: Caches visibility decisions per server tick per player UUID, eliminating repeated MoLang data queries and permission evaluations.
+
 ---
 
 ## 🛡️ Security, Exploits & Anti-Lag
@@ -82,3 +110,12 @@ A comprehensive list of all optimizations, bug fixes, crash preventions, and ant
 
 ### ⚡ FastUtil Collection Tick Safety
 - **Fixed**: Prevented `ConcurrentModificationException` and state corruption while ticking Cobblemon entities inside FastUtil collections.
+
+### ⚔️ Battle Freeze & Softlock Fixes (`AIBattleActorMixin`, `BattleSelectActionsHandlerMixin`, `ChallengeResponseHandlerMixin`, `PokemonBattleMixin`, `BattleRegistryMixin`, `PokemonEntityMixin`, `SentOutStateMixin`)
+- **Fixed AI Choice Softlock (`AIBattleActorMixin`)**: Fixed an unexecuted Kotlin lambda bug in `AIBattleActor#onChoiceRequested` when `request == null` or during `IllegalActionChoiceException`. Previously, failing to return an action response left AI and wild actors in a perpetual `mustChoose = true` state, freezing the battle turn indefinitely. Now safely passes turn responses to keep the engine flowing.
+- **Fixed Battling Entity Despawn Queue Lock (`PokemonEntityMixin`)**: Guarded `onStoppedTrackingBy` and the `END_WORLD_TICK` despawn queue from queueing or discarding entities currently participating in battles (`entity.isBattling()` / `getBattleId() != null`) or tamed Pokémon, preventing active battle participants from abruptly vanishing and crashing Showdown turns.
+- **Fixed Netty Network Race Conditions (`BattleSelectActionsHandlerMixin`, `ChallengeResponseHandlerMixin`)**: Enforced main server thread execution (`server.execute(...)`) for `BattleSelectActionsHandler` and `ChallengeResponseHandler`, preventing off-thread packet processing from corrupting Showdown battle state and colliding with the server tick loop.
+- **Fixed Ghost Battles & Desynced Registry (`BattleRegistryMixin`)**: Removed stale Caffeine cache and added strict `!battle.getEnded()` lifecycle validation to prevent players from getting permanently trapped in ghost battle states after battle termination or player disconnects.
+- **Fixed Wild Entity Removal & MoLang Caching (`PokemonBattleMixin`)**: Corrected `PokemonBattle#checkFlee` to resolve and flee battles immediately when wild Pokémon are killed or despawn, and removed premature boolean memoization that previously broke `checkFlee()` during MoLang initialization.
+- **Anti-Deadlock Inactivity Watchdog (`PokemonBattleMixin`)**: Added an automated 120-second inactivity watchdog that cleanly resolves and terminates hung battles without requiring server restarts.
+- **Safe Pokémon Recall (`SentOutStateMixin`)**: Added null-safety checks for `CobblemonPatches.server` to prevent `NullPointerException` crashes during Pokémon recall.

@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.1.9] - 17-09-2026
+
+> [!WARNING]
+> **Testing Required**: Please test this build thoroughly in a testing/staging environment before deploying to
+> production servers.
+### Optimizations & Anti-Lag
+
+- **Eliminated Autosave Lag Spikes**: Previously, the server saved all player Pokémon and PC storage in a single massive burst, causing noticeable server freezes and TPS drops every autosave interval. Storage is now saved smoothly across individual ticks in the background with zero lag spikes.
+- **Faster Pokémon Spawning**: The game no longer recalculates biome and block conditions from scratch tens of thousands of times per second. Spawning rules are now remembered in fast memory, dramatically speeding up spawning calculations and freeing up server CPU.
+- **Optimized Pokémon Collisions & Cramming**: Wild Pokémon no longer perform constant owner and team searches when bumping into each other or players. This significantly reduces lag when many wild Pokémon group together in dense areas.
+- **Smoother Pokémon Despawning**: Wild Pokémon now check player distances efficiently instead of continuously scanning every player in the world 20 times a second, reducing server lag in busy dimensions.
+- **Lag-Free PC & Pasture Blocks**: PC and Pasture blocks in loaded bases no longer scan for nearby players 20 times a second just to turn on their screen lights. Checks now run smoothly once a second and are staggered across game ticks so bases with multiple PCs stay lag-free.
+- **Faster Pokémon Data Loading & Less Memory Usage**: Streamlined how Pokémon data is read and saved, bypassing unnecessary data conversion steps for modern Pokémon files and reducing memory allocation and garbage collection pauses.
+- **Smoother NPC Visibility**: NPC visibility checks are now remembered per game tick, eliminating lag when players look at or interact with trainers and quest NPCs.
+
+### Bug Fixes & Stability
+
+- **Battle Freeze & Softlock Fixes**:
+  - **AI & Wild Pokémon Turns**: Fixed battles getting permanently frozen when wild Pokémon or NPC trainers make a move.
+  - **Battling Pokémon Despawning**: Fixed active battling Pokémon unexpectedly disappearing mid-battle and breaking the fight.
+  - **Ghost Battles**: Fixed players getting permanently stuck in a "already in battle" state after disconnecting or finishing a match.
+  - **Automatic Inactivity Recovery**: Added an automatic 120-second watchdog that safely concludes battles that get stuck or frozen, without needing a server restart.
+- **Safe Pokémon Recall**: Fixed a server crash that could occur when recalling Pokémon while the server is loading or shutting down.
+
 ## [1.1.8] - 11-09-2026
 
 > [!WARNING]

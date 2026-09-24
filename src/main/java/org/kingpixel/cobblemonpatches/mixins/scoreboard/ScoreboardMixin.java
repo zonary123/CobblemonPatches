@@ -10,8 +10,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Prevents client and server crashes caused by IllegalStateException when
+ * Mixin for {@link Scoreboard} to guard against crashes when removing score holders.
+ * <p>
+ * Prevents client and server crashes caused by {@link IllegalStateException} when
  * removing a score holder that is not registered to the target team.
+ * </p>
  */
 @Mixin(Scoreboard.class)
 public abstract class ScoreboardMixin {
@@ -20,6 +23,13 @@ public abstract class ScoreboardMixin {
   @Nullable
   public abstract Team getScoreHolderTeam(String scoreHolderName);
 
+  /**
+   * Intercepts removal of a score holder from a team, cancelling the operation if the holder is not assigned to that team.
+   *
+   * @param scoreHolderName The score holder identifier or entity name.
+   * @param team            The scoreboard team from which removal is requested.
+   * @param ci              The injection callback information.
+   */
   @Inject(
       method = "removeScoreHolderFromTeam",
       at = @At("HEAD"),
@@ -35,3 +45,4 @@ public abstract class ScoreboardMixin {
     }
   }
 }
+

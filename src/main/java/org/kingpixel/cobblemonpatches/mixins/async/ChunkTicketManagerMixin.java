@@ -11,12 +11,24 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * Mixin into {@link ChunkTicketManager} to prevent {@link NullPointerException}s
+ * when handling players leaving chunk sections whose player sets have already been cleared or removed.
+ */
 @Mixin(ChunkTicketManager.class)
 public abstract class ChunkTicketManagerMixin {
 
   @Shadow
   private Long2ObjectMap<ObjectSet<ServerPlayerEntity>> playersByChunkPos;
 
+  /**
+   * Prevents NullPointerException by canceling chunk leave processing if no player set
+   * exists for the target chunk coordinate.
+   *
+   * @param pos    the chunk section position being left
+   * @param player the player entity leaving the section
+   * @param ci     callback information to cancel method execution if unmapped
+   */
   @Inject(
     method = "handleChunkLeave",
     at = @At("HEAD"),

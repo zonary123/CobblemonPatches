@@ -29,6 +29,12 @@ public abstract class ArgumentCommandNodeMixin<S, T> {
   @Final
   private SuggestionProvider<S> customSuggestions;
 
+  /**
+   * Forces {@link PokemonPropertiesArgumentType} nodes with default suggestions
+   * to query the server dynamically, enabling rich server-side completion for vanilla clients.
+   *
+   * @param cir callback returnable
+   */
   @SuppressWarnings("unchecked")
   @Inject(method = "getCustomSuggestions", at = @At("HEAD"), cancellable = true)
   private void cobblemonPatches$askServerForPokemonProperties(

@@ -8,22 +8,32 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * @author Carlos Varas Alonso - 27/10/2025 6:05
+ * Mixin into {@link Species} to cache computed Showdown identifiers across Pokémon lookups.
+ *
+ * @author Carlos Varas Alonso
  */
 @Mixin(value = Species.class, remap = false)
 public abstract class SpeciesMixin {
 
-  // Improve performance of showdownId() by caching the result
   @Unique private String showdownIdCache = null;
 
+  /**
+   * Returns the cached showdown identifier if previously computed.
+   *
+   * @param cir callback returnable
+   */
   @Inject(method = "showdownId", at = @At("HEAD"), cancellable = true)
   private void cobblemonPatches$headShowdownId(CallbackInfoReturnable<String> cir) {
     if (showdownIdCache != null) {
       cir.setReturnValue(showdownIdCache);
-      
     }
   }
 
+  /**
+   * Computes, interns, and caches the showdown identifier on first access.
+   *
+   * @param cir callback returnable
+   */
   @Inject(method = "showdownId", at = @At("RETURN"))
   private void cobblemonPatches$returnShowdownId(CallbackInfoReturnable<String> cir) {
     if (showdownIdCache == null && cir.getReturnValue() != null) {

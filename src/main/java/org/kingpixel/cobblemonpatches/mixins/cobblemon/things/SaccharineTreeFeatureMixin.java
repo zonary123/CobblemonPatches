@@ -10,12 +10,25 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 /**
+ * Mixin for {@link SaccharineTreeFeature} to ensure world feature generation adds bees to hives on the server thread.
+ * <p>
+ * During asynchronous world generation or tree feature population, attempting to insert bee entities
+ * directly into hive block entities from worker threads can trigger concurrency issues. This mixin
+ * redirects the operation to the main server thread if not already running on it.
+ * </p>
+ *
  * @author Carlos Varas Alonso
- * 24/11/2025 21:59
  */
 @Mixin(value = SaccharineTreeFeature.class, remap = false)
 public abstract class SaccharineTreeFeatureMixin {
 
+  /**
+   * Wraps the bee nest population to ensure the hive entrance logic runs on the main server thread.
+   *
+   * @param instance The target beehive block entity.
+   * @param entity   The bee entity to insert.
+   * @param original The original entity-hive insertion operation.
+   */
   @WrapOperation(
     method = "populateBeeNest$lambda$0",
     at = @At(
@@ -33,4 +46,5 @@ public abstract class SaccharineTreeFeatureMixin {
     original.call(instance, entity);
   }
 }
+
 

@@ -8,12 +8,19 @@ import org.spongepowered.asm.mixin.Overwrite;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+/**
+ * Mixin into {@link MoveSet} to optimize moveset iteration.
+ * Replaces the default Kotlin filterNotNull allocation with a lightweight direct-array Iterator.
+ */
 @Mixin(value = MoveSet.class, remap = false)
 public abstract class MoveSetMixin {
 
   @Shadow private Move[] moves;
 
   /**
+   * Returns a memory-efficient iterator over the array of moves without intermediate allocations.
+   *
+   * @return an iterator yielding non-null Move elements
    * @author Carlos Varas Alonso
    * @reason Optimize iterator to avoid allocating intermediate lists from filterNotNull()
    */

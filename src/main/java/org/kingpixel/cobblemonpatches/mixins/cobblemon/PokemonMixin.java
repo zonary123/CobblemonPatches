@@ -20,7 +20,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * @author Carlos Varas Alonso - 27/10/2025 6:05
+ * Mixin into {@link Pokemon} to optimize showdown ID calculations and aspect updates.
+ *
+ * @author Carlos Varas Alonso
  */
 @Mixin(value = Pokemon.class, remap = false)
 public abstract class PokemonMixin {
@@ -33,9 +35,13 @@ public abstract class PokemonMixin {
   @Shadow public abstract void updateForm();
   @Shadow public abstract void onChange(PokemonUpdatePacket<?> packet);
 
-  // Improve performance of showdownId() by caching the result
   @Unique private String showdownIdCache = null;
 
+  /**
+   * Returns the cached showdown identifier if available.
+   *
+   * @param cir callback returnable
+   */
   @Inject(method = "showdownId", at = @At("HEAD"), cancellable = true)
   private void cobblemonPatches$headShowdownId(CallbackInfoReturnable<String> cir) {
     if (showdownIdCache != null) {
@@ -43,6 +49,11 @@ public abstract class PokemonMixin {
     }
   }
 
+  /**
+   * Caches and interns the calculated showdown identifier.
+   *
+   * @param cir callback returnable
+   */
   @Inject(method = "showdownId", at = @At("RETURN"))
   private void cobblemonPatches$returnShowdownId(CallbackInfoReturnable<String> cir) {
     if (showdownIdCache == null && cir.getReturnValue() != null) {
@@ -50,16 +61,33 @@ public abstract class PokemonMixin {
     }
   }
 
+  /**
+   * Invalidates the showdown cache when the Pokemon species changes.
+   *
+   * @param value the new species
+   * @param ci    callback info
+   */
   @Inject(method = "setSpecies", at = @At("HEAD"))
   private void cobblemonPatches$onSetSpecies(Species value, CallbackInfo ci) {
     showdownIdCache = null;
   }
 
+  /**
+   * Invalidates the showdown cache when the Pokemon form changes.
+   *
+   * @param value the new form data
+   * @param ci    callback info
+   */
   @Inject(method = "setForm", at = @At("HEAD"))
   private void cobblemonPatches$onSetForm(FormData value, CallbackInfo ci) {
     showdownIdCache = null;
   }
 
+  /**
+   * Optimizes aspect set calculation by pre-sizing the Set to reduce resize overhead and garbage collection.
+   *
+   * @param ci callback info
+   */
   @Inject(method = "updateAspects", at = @At("HEAD"), cancellable = true)
   private void cobblemonPatches$updateAspects(CallbackInfo ci) {
     if (!this.isClient) {

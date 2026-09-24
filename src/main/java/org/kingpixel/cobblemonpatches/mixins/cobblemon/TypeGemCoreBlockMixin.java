@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Optimizes TypeGemCoreBlock growth during world generation and random ticking.
+ * Optimizes {@link TypeGemCoreBlock} growth during world generation and random ticking.
  * Eliminates massive allocations from BFS (LinkedList/HashSet/Pair), removes redundant
  * collections shuffling, avoids map/registry key conversions, and skips wasteful block updates.
  */
@@ -32,6 +32,15 @@ public abstract class TypeGemCoreBlockMixin {
   @Unique
   private static final Direction[] DIRECTIONS = Direction.values();
 
+  /**
+   * Replaces forced growth loop with an allocation-free growth routine.
+   *
+   * @param level      the structure world access instance
+   * @param pos        the core block position
+   * @param random     random generator
+   * @param percentage target growth fill percentage
+   * @param ci         callback info
+   */
   @Inject(method = "forceGrow", at = @At("HEAD"), cancellable = true)
   private void cobblemonPatchesForceGrow(StructureWorldAccess level, BlockPos pos, Random random, float percentage,
                                          CallbackInfo ci) {
@@ -48,6 +57,15 @@ public abstract class TypeGemCoreBlockMixin {
     ci.cancel();
   }
 
+  /**
+   * Replaces standard growth tick with an allocation-free growth routine.
+   *
+   * @param level  the structure world access instance
+   * @param pos    the core block position
+   * @param random random generator
+   * @param forced whether growth is forced
+   * @param cir    callback returnable with growth status and cluster size
+   */
   @Inject(method = "grow", at = @At("HEAD"), cancellable = true)
   private void cobblemonPatchesGrow(StructureWorldAccess level, BlockPos pos, Random random, boolean forced,
                                     CallbackInfoReturnable<Pair<Boolean, Integer>> cir) {
@@ -55,6 +73,15 @@ public abstract class TypeGemCoreBlockMixin {
     cir.cancel();
   }
 
+  /**
+   * Performs an optimized cluster growth check and placement using fixed-size arrays.
+   *
+   * @param level  the world level
+   * @param pos    core position
+   * @param random random generator
+   * @param forced whether forced growth is enabled
+   * @return pair containing whether growth occurred and total gem count
+   */
   @Unique
   private Pair<Boolean, Integer> performOptimizedGrow(StructureWorldAccess level, BlockPos pos,
                                                       Random random, boolean forced) {
@@ -85,7 +112,6 @@ public abstract class TypeGemCoreBlockMixin {
         continue;
       }
 
-
       int newGemCount = tryGrowFromGem(level, gemPos, clusterBlock, random, forced, gemCount);
       if (newGemCount > 0) {
         return new Pair<>(true, newGemCount);
@@ -95,6 +121,17 @@ public abstract class TypeGemCoreBlockMixin {
     return new Pair<>(false, gemCount);
   }
 
+  /**
+   * Attempts to grow a new cluster block from an existing gem position into adjacent air blocks.
+   *
+   * @param level           world access
+   * @param gemPos          position of the source gem block
+   * @param clusterBlock    the target cluster block type
+   * @param random          random generator
+   * @param forced          whether growth is forced to advance
+   * @param currentGemCount current count of connected gems
+   * @return updated gem count if growth succeeded, 0 otherwise
+   */
   @Unique
   private static int tryGrowFromGem(StructureWorldAccess level, BlockPos gemPos, TypeGemClusterBlock clusterBlock,
                                     Random random, boolean forced, int currentGemCount) {
@@ -123,6 +160,14 @@ public abstract class TypeGemCoreBlockMixin {
     return 0;
   }
 
+  /**
+   * Places a fresh cluster block with the specified facing direction.
+   *
+   * @param level        world access
+   * @param targetPos    position to place the cluster
+   * @param clusterBlock cluster block instance
+   * @param dir          facing direction
+   */
   @Unique
   private static void placeClusterBlock(StructureWorldAccess level, BlockPos targetPos,
                                         TypeGemClusterBlock clusterBlock, Direction dir) {
@@ -134,11 +179,26 @@ public abstract class TypeGemCoreBlockMixin {
     level.setBlockState(targetPos, placeState, getUpdateFlags(level));
   }
 
+  /**
+   * Computes appropriate block update flags depending on world type.
+   *
+   * @param level world access
+   * @return block update flag bitmask
+   */
   @Unique
   private static int getUpdateFlags(WorldAccess level) {
     return level instanceof ServerWorld ? Block.NOTIFY_ALL : Block.NOTIFY_LISTENERS;
   }
 
+  /**
+   * Collects connected gem blocks using an array-based BFS traversal to avoid heap allocations.
+   *
+   * @param level        block view
+   * @param origin       origin block pos
+   * @param outPositions output array for discovered positions
+   * @param outStates    output array for corresponding block states
+   * @return total number of connected gem blocks discovered
+   */
   @Unique
   private static int collectConnectedGems(BlockView level, BlockPos origin,
                                           BlockPos[] outPositions, BlockState[] outStates) {
@@ -167,6 +227,14 @@ public abstract class TypeGemCoreBlockMixin {
     return count;
   }
 
+  /**
+   * Linear search to determine whether a block position is already recorded in the working array.
+   *
+   * @param positions array of positions
+   * @param count     number of valid entries in array
+   * @param target    position being searched
+   * @return true if position is present
+   */
   @Unique
   private static boolean isAlreadyVisited(BlockPos[] positions, int count, BlockPos target) {
     for (int i = 0; i < count; i++) {
@@ -177,6 +245,14 @@ public abstract class TypeGemCoreBlockMixin {
     return false;
   }
 
+  /**
+   * Updates stunted status across all adjacent cluster blocks.
+   *
+   * @param level        world access
+   * @param gemPositions array of gem block positions
+   * @param gemCount     number of gem blocks
+   * @param stunted      target stunted boolean state
+   */
   @Unique
   private static void updateStuntState(WorldAccess level, BlockPos[] gemPositions, int gemCount, boolean stunted) {
     for (int i = 0; i < gemCount; i++) {
@@ -187,6 +263,13 @@ public abstract class TypeGemCoreBlockMixin {
     }
   }
 
+  /**
+   * Updates cluster properties on a neighbor block if it matches {@link TypeGemClusterBlock}.
+   *
+   * @param level       world access
+   * @param neighborPos neighbor position
+   * @param stunted     stunted state
+   */
   @Unique
   private static void applyStuntToNeighbor(WorldAccess level, BlockPos neighborPos, boolean stunted) {
     BlockState state = level.getBlockState(neighborPos);
@@ -205,6 +288,14 @@ public abstract class TypeGemCoreBlockMixin {
     }
   }
 
+  /**
+   * Checks whether at least one neighbor position is air, allowing room for growth.
+   *
+   * @param level        structure world access
+   * @param gemPositions array of gem positions
+   * @param gemCount     number of gem positions
+   * @return true if any neighboring position is air
+   */
   @Unique
   private static boolean hasBreathingRoom(StructureWorldAccess level, BlockPos[] gemPositions, int gemCount) {
     for (int i = 0; i < gemCount; i++) {
@@ -218,6 +309,13 @@ public abstract class TypeGemCoreBlockMixin {
     return false;
   }
 
+  /**
+   * Fast-forwards cluster growth stages up to 5 iterations.
+   *
+   * @param level      structure world access
+   * @param clusterPos position of the cluster block
+   * @param random     random generator
+   */
   @Unique
   private static void advanceCluster(StructureWorldAccess level, BlockPos clusterPos, Random random) {
     for (int i = 0; i < 5; i++) {
@@ -230,6 +328,13 @@ public abstract class TypeGemCoreBlockMixin {
     }
   }
 
+  /**
+   * In-place Fisher-Yates array shuffling using Minecraft's Random instance.
+   *
+   * @param array  array to shuffle
+   * @param length number of elements to shuffle
+   * @param random random generator
+   */
   @Unique
   private static void shuffleIndices(int[] array, int length, Random random) {
     for (int i = length - 1; i > 0; i--) {
@@ -240,6 +345,12 @@ public abstract class TypeGemCoreBlockMixin {
     }
   }
 
+  /**
+   * Checks if the given block state belongs to Cobblemon type gem blocks.
+   *
+   * @param state block state to check
+   * @return true if tagged as a type gem block
+   */
   @Unique
   private static boolean isGemBlock(BlockState state) {
     return state.isIn(CobblemonBlockTags.TYPE_GEM_BLOCKS);

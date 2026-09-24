@@ -13,9 +13,17 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Unique;
 
+/**
+ * Mixin into {@link EVs} to optimize serialization codecs.
+ * Overwrites default codecs to read directly from the underlying stats map
+ * via {@link PokemonStatsAccessor}, avoiding unnecessary intermediate HashMap allocations.
+ */
 @Mixin(value = EVs.class, remap = false)
 public abstract class EVsMixin {
 
+  /**
+   * Optimized Codec instance that directly accesses the backing stats map.
+   */
   @Unique
   private static final Codec<EVs> OPTIMIZED_CODEC = Codec.unboundedMap(Stat.Companion.getPERMANENT_ONLY_CODEC(), Codec.intRange(0, EVs.MAX_STAT_VALUE))
     .comapFlatMap(
@@ -32,9 +40,15 @@ public abstract class EVsMixin {
       evs -> ((PokemonStatsAccessor) (Object) evs).cobblemonPatches$getStats()
     );
 
+  /**
+   * Optimized PacketCodec instance wrapping {@link #OPTIMIZED_CODEC} for network serialization.
+   */
   @Unique private static final PacketCodec<ByteBuf, EVs> OPTIMIZED_STREAM_CODEC = PacketCodecs.codec(OPTIMIZED_CODEC);
 
   /**
+   * Overrides the default EV codec with an optimized version that avoids intermediate collection allocations.
+   *
+   * @return the optimized EVs Codec
    * @author Carlos Varas Alonso
    * @reason Overwrite getCODEC to return the optimized codec that avoids copying the stats map to a new HashMap.
    */
@@ -44,6 +58,9 @@ public abstract class EVsMixin {
   }
 
   /**
+   * Overrides the default EV stream codec with the optimized packet codec.
+   *
+   * @return the optimized EVs PacketCodec
    * @author Carlos Varas Alonso
    * @reason Overwrite getSTREAM_CODEC to return the optimized stream codec based on the optimized codec.
    */

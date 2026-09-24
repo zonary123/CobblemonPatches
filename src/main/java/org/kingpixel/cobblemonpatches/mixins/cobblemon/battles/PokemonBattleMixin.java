@@ -1,5 +1,6 @@
 package org.kingpixel.cobblemonpatches.mixins.cobblemon.battles;
 
+import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.actor.ActorType;
 import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
@@ -7,14 +8,11 @@ import com.cobblemon.mod.common.api.battles.model.actor.EntityBackedBattleActor;
 import com.cobblemon.mod.common.api.battles.model.actor.FleeableBattleActor;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
 import com.cobblemon.mod.common.api.events.battles.BattleFledEvent;
-import com.cobblemon.mod.common.battles.ActiveBattlePokemon;
-import com.cobblemon.mod.common.battles.BattleSide;
 import com.cobblemon.mod.common.battles.actor.PlayerBattleActor;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import kotlin.Pair;
 import kotlin.Unit;
 import net.minecraft.entity.Entity;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -22,217 +20,98 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.kingpixel.cobblemonpatches.CobblemonPatches;
+import org.kingpixel.cobblemonpatches.config.ModConfig;
+import org.kingpixel.cobblemonpatches.util.TextUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static com.cobblemon.mod.common.util.LocalizationUtilsKt.battleLang;
 
 /**
- * Pokémon Battle optimization without the use of Streams, lambdas, or temporary objects.
- * Reduces GC pressure, direct access, and intelligent caching.
- * <p>
- * Author: Carlos Varas Alonso - 27/10/2025
+ * Optimizes {@link PokemonBattle} operations by providing robust wild entity despawn detection,
+ * anti-freeze watchdog timers, and optimized battle flee resolution.
+ *
+ * @author Carlos Varas Alonso
  */
 @Mixin(value = PokemonBattle.class, remap = false)
 public abstract class PokemonBattleMixin {
-  @Unique
-  private List<BattleSide> cachedSides;
-  @Unique
-  private List<BattleActor> cachedActors;
-  @Unique
-  private List<ActiveBattlePokemon> cachedActivePokemon;
-  @Unique
-  private List<UUID> cachedPlayerUUIDs;
-  @Unique
-  private List<ServerPlayerEntity> cachedPlayers;
-  @Unique
-  private boolean cacheDirty = true;
 
   @Unique
-  private void invalidateCache() {
-    cacheDirty = true;
-    cachedSides = null;
-    cachedActors = null;
-    cachedActivePokemon = null;
-    cachedPlayerUUIDs = null;
-    cachedPlayers = null;
-  }
+  private int inactivityTicks = 0;
 
-  @Unique
-  private List<BattleSide> computeSides() {
+  /**
+   * Watchdog on battle ticking to detect removed wild entities and check inactivity timeout.
+   *
+   * @param ci callback info
+   */
+  @Inject(method = "tick", at = @At("TAIL"))
+  private void watchdogTick(CallbackInfo ci) {
     PokemonBattle self = (PokemonBattle) (Object) this;
-    List<BattleSide> result = new ArrayList<>(2);
-    result.add(self.getSide1());
-    result.add(self.getSide2());
-    return result;
-  }
-
-  @Unique
-  private List<BattleActor> computeActors() {
-    if (cachedSides == null) cachedSides = computeSides();
-    List<BattleActor> result = new ArrayList<>(4);
-    for (BattleSide side : cachedSides) {
-      BattleActor[] actors = side.getActors();
-      Collections.addAll(result, actors);
+    if (!self.getStarted() || self.getEnded()) {
+      this.inactivityTicks = 0;
+      return;
     }
-    return result;
-  }
 
-  @Unique
-  private List<ActiveBattlePokemon> computeActivePokemon() {
-    if (cachedActors == null) cachedActors = computeActors();
-    List<ActiveBattlePokemon> result = new ArrayList<>(6);
-    for (BattleActor actor : cachedActors) {
-      List<ActiveBattlePokemon> actives = actor.getActivePokemon();
-      result.addAll(actives);
+    if (checkWildEntitiesRemoved(self)) {
+      Cobblemon.LOGGER.warn("Wild Pokémon entity removed from world during battle {}. Ending battle safely.", self.getBattleId());
+      self.checkFlee();
+      return;
     }
-    return result;
+
+    checkInactivityTimeout(self);
   }
 
   @Unique
-  private List<UUID> computePlayerUUIDs() {
-    if (cachedActors == null) cachedActors = computeActors();
-    List<UUID> result = new ArrayList<>();
-    for (BattleActor actor : cachedActors) {
-      if (actor.getType() == ActorType.PLAYER) {
-        UUID uuid = actor.getUuid();
-        result.add(uuid);
+  private boolean checkWildEntitiesRemoved(PokemonBattle self) {
+    if (!self.isPvW()) return false;
+    for (BattleActor actor : self.getActors()) {
+      if (actor.getType() == ActorType.WILD && actor instanceof EntityBackedBattleActor<?> entityActor) {
+        Entity entity = entityActor.getEntity();
+        if (entity != null && !entity.isRemoved()) {
+          return false;
+        }
       }
     }
-    return result;
+    return true;
   }
 
   @Unique
-  private List<ServerPlayerEntity> computePlayers() {
-    if (cachedPlayerUUIDs == null) cachedPlayerUUIDs = computePlayerUUIDs();
-    List<ServerPlayerEntity> result = new ArrayList<>(cachedPlayerUUIDs.size());
-    for (UUID uuid : cachedPlayerUUIDs) {
-      ServerPlayerEntity player = CobblemonPatches.server.getPlayerManager().getPlayer(uuid);
-      if (player != null) result.add(player);
+  private void checkInactivityTimeout(PokemonBattle self) {
+    boolean waitingForInput = false;
+    for (BattleActor actor : self.getActors()) {
+      if (actor.getMustChoose()) {
+        waitingForInput = true;
+        break;
+      }
     }
-    return result;
-  }
 
-  @Inject(method = "getSides", at = @At("HEAD"), cancellable = true)
-  private void optimizeGetSides(CallbackInfoReturnable<Iterable<BattleSide>> cir) {
-    if (!cacheDirty && cachedSides != null) {
-      cir.setReturnValue(cachedSides);
-      cir.cancel();
-      return;
+    if (waitingForInput) {
+      this.inactivityTicks++;
+      if (this.inactivityTicks > 2400) {
+        Cobblemon.LOGGER.warn("Battle {} timed out after 120s of total inactivity/lock. Resolving to prevent freeze.", self.getBattleId());
+        ModConfig config = CobblemonPatches.getConfig();
+        Text timeoutMsg = TextUtils.parse(config.getBattleInactivityTimeoutMessage());
+        self.broadcastChatMessage(timeoutMsg);
+        self.stop();
+        this.inactivityTicks = 0;
+      }
+    } else {
+      this.inactivityTicks = 0;
     }
-    cachedSides = computeSides();
-    cir.setReturnValue(cachedSides);
-    cir.cancel();
-  }
-
-  @Inject(method = "getActors", at = @At("HEAD"), cancellable = true)
-  private void optimizeGetActors(CallbackInfoReturnable<Iterable<BattleActor>> cir) {
-    if (!cacheDirty && cachedActors != null) {
-      cir.setReturnValue(cachedActors);
-      cir.cancel();
-      return;
-    }
-    cachedActors = computeActors();
-    cir.setReturnValue(cachedActors);
-    cir.cancel();
-  }
-
-  @Inject(method = "getActivePokemon", at = @At("HEAD"), cancellable = true)
-  private void optimizeActivePokemon(CallbackInfoReturnable<Iterable<ActiveBattlePokemon>> cir) {
-    if (!cacheDirty && cachedActivePokemon != null) {
-      cir.setReturnValue(cachedActivePokemon);
-      cir.cancel();
-      return;
-    }
-    cachedActivePokemon = computeActivePokemon();
-    cir.setReturnValue(cachedActivePokemon);
-    cir.cancel();
-  }
-
-  @Inject(method = "getPlayerUUIDs", at = @At("HEAD"), cancellable = true)
-  private void optimizePlayerUUIDs(CallbackInfoReturnable<Iterable<UUID>> cir) {
-    if (!cacheDirty && cachedPlayerUUIDs != null) {
-      cir.setReturnValue(cachedPlayerUUIDs);
-      cir.cancel();
-      return;
-    }
-    cachedPlayerUUIDs = computePlayerUUIDs();
-    cir.setReturnValue(cachedPlayerUUIDs);
-    cir.cancel();
-  }
-
-  @Inject(method = "getPlayers", at = @At("HEAD"), cancellable = true)
-  private void optimizePlayers(CallbackInfoReturnable<Iterable<ServerPlayerEntity>> cir) {
-    if (!cacheDirty && cachedPlayers != null) {
-      cir.setReturnValue(cachedPlayers);
-      cir.cancel();
-      return;
-    }
-    cachedPlayers = computePlayers();
-    cir.setReturnValue(cachedPlayers);
-    cir.cancel();
-  }
-
-  @Unique
-  private Boolean isPvNCache = null;
-
-  @Inject(method = "isPvN", at = @At("HEAD"), cancellable = true)
-  private void PokemonBattleMixin$isPvN(CallbackInfoReturnable<Boolean> cir) {
-    if (isPvNCache != null) {
-      cir.setReturnValue(isPvNCache);
-      cir.cancel();
-    }
-  }
-
-  @Inject(method = "isPvN", at = @At("RETURN"))
-  private void PokemonBattleMixin$isPvNReturn(CallbackInfoReturnable<Boolean> cir) {
-    isPvNCache = cir.getReturnValue();
-  }
-
-  @Unique
-  private Boolean isPvPCache = null;
-
-  @Inject(method = "isPvP", at = @At("HEAD"), cancellable = true)
-  private void PokemonBattleMixin$isPvP(CallbackInfoReturnable<Boolean> cir) {
-    if (isPvPCache != null) {
-      cir.setReturnValue(isPvPCache);
-      cir.cancel();
-    }
-  }
-
-  @Inject(method = "isPvP", at = @At("RETURN"))
-  private void PokemonBattleMixin$isPvPReturn(CallbackInfoReturnable<Boolean> cir) {
-    isPvPCache = cir.getReturnValue();
-  }
-
-  @Unique
-  private Boolean isPvWCache = null;
-
-  @Inject(method = "isPvW", at = @At("HEAD"), cancellable = true)
-  private void PokemonBattleMixin$isPvW(CallbackInfoReturnable<Boolean> cir) {
-    if (isPvWCache != null) {
-      cir.setReturnValue(isPvWCache);
-      cir.cancel();
-    }
-  }
-
-  @Inject(method = "isPvW", at = @At("RETURN"))
-  private void PokemonBattleMixin$isPvWReturn(CallbackInfoReturnable<Boolean> cir) {
-    isPvWCache = cir.getReturnValue();
   }
 
   /**
+   * Evaluates if a wild Pokemon battle has ended due to distance or entity removal without creating intermediate stream allocations.
+   *
    * @author Carlos Varas Alonso
-   * @reason Optimized flee check without streams or temporary objects
+   * @reason Optimized flee check with proper empty/despawn resolution
    */
   @Overwrite
   public void checkFlee() {
@@ -253,6 +132,14 @@ public abstract class PokemonBattleMixin {
     }
   }
 
+  /**
+   * Categorizes battle actors into fleeable, player entity-backed, and wild Pokemon entity lists.
+   *
+   * @param allActors      all actors in the battle
+   * @param fleeableActors output list for fleeable actors
+   * @param playerEntities output list for player entity actors
+   * @param wildEntities   output list for wild Pokemon entities
+   */
   @Unique
   private void collectActors(Iterable<BattleActor> allActors,
                              List<FleeableBattleActor> fleeableActors,
@@ -264,7 +151,7 @@ public abstract class PokemonBattleMixin {
       }
       if (actor instanceof EntityBackedBattleActor<?> entityActor) {
         Entity entity = entityActor.getEntity();
-        if (entity == null) continue;
+        if (entity == null || entity.isRemoved()) continue;
         if (actor.getType() == ActorType.PLAYER) playerEntities.add(entityActor);
         else if (actor.getType() == ActorType.WILD && entity instanceof PokemonEntity pokemon) {
           wildEntities.add(pokemon);
@@ -273,10 +160,18 @@ public abstract class PokemonBattleMixin {
     }
   }
 
+  /**
+   * Determines whether all fleeable actors are beyond their maximum allowed flee distance from all players
+   * or have been removed/unloaded from the world.
+   *
+   * @param fleeableActors list of fleeable actors
+   * @param playerEntities list of player entity actors
+   * @return true if all fleeable actors are beyond flee distance or removed
+   */
   @Unique
   private boolean allWildOutOfRange(List<FleeableBattleActor> fleeableActors,
                                     List<EntityBackedBattleActor<?>> playerEntities) {
-    if (fleeableActors.isEmpty()) return false;
+    if (fleeableActors.isEmpty()) return true;
 
     for (FleeableBattleActor pokemonActor : fleeableActors) {
       Pair<ServerWorld, Vec3d> wp = pokemonActor.getWorldAndPosition();
@@ -293,12 +188,20 @@ public abstract class PokemonBattleMixin {
     return true;
   }
 
+  /**
+   * Computes the distance to the nearest participating player in the same world.
+   *
+   * @param pos            position of the Pokemon
+   * @param world          world where the Pokemon is located
+   * @param playerEntities list of player entity actors
+   * @return Euclidean distance to nearest player or Float.MAX_VALUE if none found
+   */
   @Unique
   private float nearestPlayerDistance(Vec3d pos, World world, List<EntityBackedBattleActor<?>> playerEntities) {
     float nearest = Float.MAX_VALUE;
     for (EntityBackedBattleActor<?> playerActor : playerEntities) {
       Entity entity = playerActor.getEntity();
-      if (entity == null || entity.getWorld() != world) continue;
+      if (entity == null || entity.isRemoved() || entity.getWorld() != world) continue;
 
       float dist = (float) pos.distanceTo(entity.getPos());
       if (dist < nearest) nearest = dist;
@@ -306,13 +209,26 @@ public abstract class PokemonBattleMixin {
     return nearest;
   }
 
+  /**
+   * Fully heals all wild Pokemon involved in the fled battle.
+   *
+   * @param wildEntities list of wild Pokemon entities
+   */
   @Unique
   private void healWildPokemon(List<PokemonEntity> wildEntities) {
     for (PokemonEntity entity : wildEntities) {
-      entity.getPokemon().heal();
+      if (entity != null && !entity.isRemoved() && entity.getPokemon() != null) {
+        entity.getPokemon().heal();
+      }
     }
   }
 
+  /**
+   * Finds any player battle actor present among the given actors.
+   *
+   * @param allActors iterable of battle actors
+   * @return player battle actor or null
+   */
   @Unique
   private PlayerBattleActor findAnyPlayer(Iterable<BattleActor> allActors) {
     for (BattleActor actor : allActors) {
@@ -321,6 +237,12 @@ public abstract class PokemonBattleMixin {
     return null;
   }
 
+  /**
+   * Posts the {@link BattleFledEvent} on the Cobblemon event bus.
+   *
+   * @param battle the fled battle instance
+   * @param player the player battle actor
+   */
   @Unique
   private void postBattleFledEvent(PokemonBattle battle, PlayerBattleActor player) {
     if (player != null) {
@@ -329,6 +251,11 @@ public abstract class PokemonBattleMixin {
     }
   }
 
+  /**
+   * Sends the flee localization message to all participating actors.
+   *
+   * @param allActors iterable of battle actors
+   */
   @Unique
   private void sendFleeMessages(Iterable<BattleActor> allActors) {
     Text text = battleLang("flee")
@@ -336,7 +263,7 @@ public abstract class PokemonBattleMixin {
     for (BattleActor actor : allActors) {
       if (actor instanceof EntityBackedBattleActor<?> entityActor) {
         Entity entity = entityActor.getEntity();
-        if (entity != null) {
+        if (entity != null && !entity.isRemoved()) {
           entity.sendMessage(text);
         }
       }

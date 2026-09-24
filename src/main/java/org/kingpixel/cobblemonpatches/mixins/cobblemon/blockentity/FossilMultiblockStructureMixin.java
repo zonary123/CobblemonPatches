@@ -14,9 +14,22 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
+/**
+ * Mixin into {@link FossilMultiblockStructure} to guarantee safe NBT encoding of fossil machine item stacks,
+ * stripping problematic enchantment components and gracefully handling invalid stack states.
+ */
 @Mixin(FossilMultiblockStructure.class)
 public abstract class FossilMultiblockStructureMixin {
 
+  /**
+   * Safely encodes an ItemStack to NBT with registry DynamicOps while validating item data integrity.
+   *
+   * @param <T>   codec element type
+   * @param codec original codec
+   * @param ops   serialization ops
+   * @param value raw value object to encode
+   * @return DataResult containing encoded NbtElement
+   */
   @Redirect(
     method = "writeToNbt",
     at = @At(
@@ -33,7 +46,6 @@ public abstract class FossilMultiblockStructureMixin {
       CobblemonPatches.LOGGER.warn("FossilMultiblockStructure received non-ItemStack value during writeToNbt: {}", value);
       return DataResult.success(new NbtCompound());
     }
-
 
     if (stack.isEmpty() || stack.getCount() <= 0) {
       CobblemonPatches.LOGGER.warn("Skipping invalid fossil machine stack during writeToNbt (item={}, count={})", stack.getItem(), stack.getCount());

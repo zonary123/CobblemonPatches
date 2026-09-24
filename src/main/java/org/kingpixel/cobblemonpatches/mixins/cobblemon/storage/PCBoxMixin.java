@@ -11,7 +11,10 @@ import org.spongepowered.asm.mixin.Shadow;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-
+/**
+ * Mixin into {@link PCBox} providing an allocation-free iterator directly traversing
+ * the underlying Pokémon array and skipping null entries.
+ */
 @Mixin(value = PCBox.class, remap = false)
 public abstract class PCBoxMixin implements Iterable<Pokemon> {
 
@@ -20,8 +23,11 @@ public abstract class PCBoxMixin implements Iterable<Pokemon> {
   private Pokemon[] pokemon;
 
   /**
-   * @author
-   * @reason
+   * Returns a lightweight iterator over non-null Pokemon in this PC box without allocating intermediate collections.
+   *
+   * @return iterator of present Pokemon
+   * @author Carlos Varas Alonso
+   * @reason Provide memory-efficient array iteration over non-null Pokemon entries.
    */
   @Overwrite
   @Override
@@ -33,16 +39,22 @@ public abstract class PCBoxMixin implements Iterable<Pokemon> {
 
       @Override
       public boolean hasNext() {
-        while (idx < data.length && data[idx] == null) idx++;
+        while (idx < data.length && data[idx] == null) {
+          idx++;
+        }
         return idx < data.length;
       }
 
       @Override
       public Pokemon next() {
-        if (!hasNext()) throw new NoSuchElementException();
-        return data[idx++];
+        while (hasNext()) {
+          Pokemon p = data[idx++];
+          if (p != null) {
+            return p;
+          }
+        }
+        throw new NoSuchElementException();
       }
     };
   }
 }
-
