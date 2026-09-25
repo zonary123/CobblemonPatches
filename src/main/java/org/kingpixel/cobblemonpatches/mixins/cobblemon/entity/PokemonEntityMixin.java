@@ -90,16 +90,14 @@ public abstract class PokemonEntityMixin extends TameableShoulderEntity {
 
   @Unique
   private static boolean canSafelyDiscard(PokemonEntity entity) {
-    if (entity.isRemoved() || entity.getBattleId() != null || entity.isBattling()) {
-      return false;
-    }
-    Pokemon poke = entity.getPokemon();
-    return poke != null && poke.isWild() && !entity.isPersistent();
+    return entity != null && !entity.isRemoved() && entity.getBattleId() == null && !entity.isBattling();
   }
 
   @Unique
   private static void discardAndDeactivate(PokemonEntity entity) {
-    entity.discard();
+    if (!entity.isRemoved()) {
+      entity.discard();
+    }
     Pokemon poke = entity.getPokemon();
     if (poke != null && poke.getState() instanceof ActivePokemonState) {
       poke.setState(new InactivePokemonState());
@@ -121,7 +119,6 @@ public abstract class PokemonEntityMixin extends TameableShoulderEntity {
   @WrapOperation(method = "onStoppedTrackingBy", at = @At(value = "INVOKE", target = "Lcom/cobblemon/mod/common/entity/pokemon/PokemonEntity;remove(Lnet/minecraft/entity/Entity$RemovalReason;)V"))
   public void cobblemonpatches$doNotCallEntityRemove(PokemonEntity pokemonEntity, RemovalReason reason, Operation<Void> original) {
     if (this.isRemoved() || pokemonEntity.getBattleId() != null || pokemonEntity.isBattling()) return;
-    if (this.pokemon != null && !this.pokemon.isWild()) return;
     DESPAWN_QUEUE.add(pokemonEntity);
   }
 
