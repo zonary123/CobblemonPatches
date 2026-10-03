@@ -32,24 +32,34 @@ public abstract class PlayerPartyStoreMixin {
       CallbackInfoReturnable<Boolean> cir
   ) {
     CompoundTag shoulderTag = isLeft ? player.getShoulderEntityLeft() : player.getShoulderEntityRight();
-    if (shoulderTag == null || shoulderTag.isEmpty() || !shoulderTag.contains("Pokemon", Tag.TAG_COMPOUND)) {
-      if (isLeft) {
-        player.setShoulderEntityLeft(new CompoundTag());
-      } else {
-        player.setShoulderEntityRight(new CompoundTag());
-      }
-      cir.setReturnValue(false);
+    if (shoulderTag == null || shoulderTag.isEmpty()) {
+      cir.setReturnValue(true);
+      return;
+    }
+
+    String id = shoulderTag.getString("id");
+    if (!id.equals("cobblemon:pokemon")) {
+      return;
+    }
+
+    if (!shoulderTag.contains("Pokemon", Tag.TAG_COMPOUND)) {
+      purgeShoulder(player, isLeft);
+      cir.setReturnValue(true);
       return;
     }
 
     CompoundTag pokemonTag = shoulderTag.getCompound("Pokemon");
     if (!pokemonTag.hasUUID("UUID")) {
-      if (isLeft) {
-        player.setShoulderEntityLeft(new CompoundTag());
-      } else {
-        player.setShoulderEntityRight(new CompoundTag());
-      }
-      cir.setReturnValue(false);
+      purgeShoulder(player, isLeft);
+      cir.setReturnValue(true);
+    }
+  }
+
+  private void purgeShoulder(ServerPlayer player, boolean isLeft) {
+    if (isLeft) {
+      player.setShoulderEntityLeft(new CompoundTag());
+    } else {
+      player.setShoulderEntityRight(new CompoundTag());
     }
   }
 }
