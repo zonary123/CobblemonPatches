@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.2] - 03-10-2026
+
+> [!WARNING]
+> **Testing Required**: Please test this build thoroughly in a testing/staging environment before deploying to
+> production servers.
+
+### Bug Fixes & Stability
+
+- **Fixed Pokémon Shoulder Mount & Tick Crashes**: Fixed a server crash when mounting Pokémon to shoulders and added self-healing protection that automatically purges corrupted or incomplete shoulder data instead of crashing the server every second.
+
 ## [1.2.1] - 01-10-2026
 
 > [!WARNING]

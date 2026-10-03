@@ -33,8 +33,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.cobblemon.mod.common.pokemon.ai.FormPokemonBehaviour;
 import com.cobblemon.mod.common.pokemon.ai.MoveBehaviour;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.nbt.CompoundTag;
 
 import java.util.Queue;
 import java.util.UUID;
@@ -53,8 +51,6 @@ public abstract class PokemonEntityMixin extends ShoulderRidingEntity {
   @Shadow private PokemonPastureBlockEntity.Tethering tethering;
   @Shadow public abstract FormPokemonBehaviour getBehaviour();
 
-  @Unique private CompoundTag cobblemonpatches$cachedPokemonNbt = null;
-  @Unique private int cobblemonpatches$cachedPokemonStateHash = 0;
 
   /**
    * Protected entity constructor.
@@ -244,72 +240,7 @@ public abstract class PokemonEntityMixin extends ShoulderRidingEntity {
     return this.tethering != null;
   }
 
-  /**
-   * Short-circuits entity saving if the Pokemon is removed or marked not to be saved,
-   * completely bypassing heavy DFU Codec serialization, Brain serialization, and save events.
-   *
-   * @param nbt entity NBT compound
-   * @param cir callback returnable
-   */
-  @Inject(method = "saveWithoutId", at = @At("HEAD"), cancellable = true)
-  private void cobblemonpatches$fastSaveWithoutId(CompoundTag nbt, CallbackInfoReturnable<CompoundTag> cir) {
-    if (this.isRemoved() || !this.shouldBeSaved()) {
-      cir.setReturnValue(super.saveWithoutId(nbt));
-    }
-  }
 
-  /**
-   * Caches the serialized Pokemon NBT tag when saving to world data, avoiding repeated expensive
-   * Mojang DFU Codec encoding when the entity data has not changed.
-   *
-   * @param pokemon        pokemon instance
-   * @param registryAccess registry access
-   * @param tag            target compound tag
-   * @param mask           synthetic bitmask
-   * @param obj            synthetic object
-   * @param original       wrapped operation
-   * @return serialized compound tag
-   */
-  @WrapOperation(
-      method = "saveWithoutId",
-      at = @At(
-          value = "INVOKE",
-          target = "Lcom/cobblemon/mod/common/pokemon/Pokemon;saveToNBT$default(Lcom/cobblemon/mod/common/pokemon/Pokemon;Lnet/minecraft/core/RegistryAccess;Lnet/minecraft/nbt/CompoundTag;ILjava/lang/Object;)Lnet/minecraft/nbt/CompoundTag;"
-      )
-  )
-  private CompoundTag cobblemonpatches$cachePokemonSave(
-      Pokemon pokemon,
-      RegistryAccess registryAccess,
-      CompoundTag tag,
-      int mask,
-      Object obj,
-      Operation<CompoundTag> original
-  ) {
-    int currentStateHash = cobblemonpatches$computePokemonStateHash(pokemon);
-    if (this.cobblemonpatches$cachedPokemonNbt != null
-        && pokemon != null
-        && currentStateHash == this.cobblemonpatches$cachedPokemonStateHash) {
-      return this.cobblemonpatches$cachedPokemonNbt.copy();
-    }
-    CompoundTag result = original.call(pokemon, registryAccess, tag, mask, obj);
-    if (result != null && pokemon != null) {
-      this.cobblemonpatches$cachedPokemonNbt = result.copy();
-      this.cobblemonpatches$cachedPokemonStateHash = currentStateHash;
-    }
-    return result;
-  }
-
-  @Unique
-  private static int cobblemonpatches$computePokemonStateHash(Pokemon pokemon) {
-    if (pokemon == null) return 0;
-    int hash = pokemon.getCurrentHealth();
-    hash = 31 * hash + pokemon.getLevel();
-    hash = 31 * hash + pokemon.getFriendship();
-    hash = 31 * hash + (pokemon.getStatus() != null ? pokemon.getStatus().hashCode() : 0);
-    hash = 31 * hash + pokemon.getAspects().hashCode();
-    hash = 31 * hash + (pokemon.getHeldItem$common().isEmpty() ? 0 : pokemon.getHeldItem$common().getItem().hashCode());
-    return hash;
-  }
 
   /**
    * Throttles despawn evaluation to once every 20 ticks (1 Hz), matching CobblemonAgingDespawner's

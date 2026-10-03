@@ -49,6 +49,7 @@
     "cobblemon.storage.FileBackedPokemonStoreFactoryMixin",
     "cobblemon.storage.PCBoxMixin",
     "cobblemon.storage.PCStoreMixin",
+    "cobblemon.storage.PlayerPartyStoreMixin",
     "cobblemon.things.SentOutStateMixin",
     "exploits.lag.SnowballEntityMixin",
     "scoreboard.ScoreboardMixin"
