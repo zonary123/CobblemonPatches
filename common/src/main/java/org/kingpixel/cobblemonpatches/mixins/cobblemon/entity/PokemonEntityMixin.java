@@ -14,14 +14,13 @@ import com.cobblemon.mod.common.battles.BattleRegistry;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import dev.architectury.event.events.common.TickEvent;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.animal.ShoulderRidingEntity;
 import net.minecraft.world.level.Level;
 import org.kingpixel.cobblemonpatches.CobblemonPatches;
+import org.kingpixel.cobblemonpatches.util.PokemonEntityUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
@@ -118,12 +117,8 @@ public abstract class PokemonEntityMixin extends ShoulderRidingEntity {
     if (entity == null || entity.isRemoved()) {
       return false;
     }
-    UUID ownerUuid = entity.getOwnerUUID();
-    if (ownerUuid != null && entity.getTethering() == null) {
-      MinecraftServer server = CobblemonPatches.server != null ? CobblemonPatches.server : entity.getServer();
-      if (server != null && server.getPlayerList().getPlayer(ownerUuid) == null) {
-        return true;
-      }
+    if (PokemonEntityUtils.isOrphanedPlayerPokemon(entity)) {
+      return true;
     }
     return entity.getBattleId() == null && !entity.isBattling();
   }
@@ -163,15 +158,9 @@ public abstract class PokemonEntityMixin extends ShoulderRidingEntity {
       return;
     }
 
-    UUID ownerUuid = this.getOwnerUUID();
-    if (ownerUuid != null && this.tethering == null) {
-      MinecraftServer server = this.getServer();
-      if (server != null && server.isRunning()) {
-        ServerPlayer player = server.getPlayerList().getPlayer(ownerUuid);
-        if (player == null || player.hasDisconnected() || player.isRemoved()) {
-          discardAndDeactivate((PokemonEntity) (Object) this);
-        }
-      }
+    PokemonEntity self = (PokemonEntity) (Object) this;
+    if (PokemonEntityUtils.isOrphanedPlayerPokemon(self)) {
+      discardAndDeactivate(self);
     }
   }
 
