@@ -16,7 +16,6 @@
     "cobblemon.PropertiesCompletionProviderMixin",
     "cobblemon.command.ArgumentCommandNodeMixin",
     "cobblemon.SpeciesMixin",
-    "cobblemon.TypeGemCoreBlockMixin",
     "cobblemon.battles.AIBattleActorMixin",
     "cobblemon.battles.BattleRegistryMixin",
     "cobblemon.battles.PokemonBattleMixin",

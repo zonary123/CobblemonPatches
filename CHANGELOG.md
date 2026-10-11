@@ -1,6 +1,21 @@
 # Changelog
 
+## [1.2.3] - 11-10-2026
+
+### Changed
+
+- **Cobblemon Compatibility Upgrade**: Updated Cobblemon dependency to `1.8.2+1.21.1`.
+- **Type Gem Growth Optimization**: Temporarily disabled `TypeGemCoreBlockMixin` due to upstream breaking changes in Cobblemon 1.8.2 (methods `forceGrow` and `grow` replaced with `expand`), preventing `InvalidInjectionException` server crashes during startup.
+
 ## [1.2.2] - 03-10-2026
+
+### Optimizations & Anti-Lag
+
+- **PokemonEntity Persistence & Despawning**: Implemented caching for Pokémon entity state, deferred despawning routines, and tick throttling to reduce per-tick server overhead.
+
+### Bug Fixes & Stability
+
+- **Fixed Shoulder Mount Cascades & Data Corruption**: Scoped shoulder checks strictly to Cobblemon entities to prevent respawn loops and added automated purging of corrupt shoulder NBT tags to avoid `NullPointerException` crashes in `validateShoulder`.
 
 ## [1.2.1] - 01-10-2026
 
