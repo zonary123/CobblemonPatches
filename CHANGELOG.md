@@ -2,10 +2,13 @@
 
 ## [1.2.3] - 11-10-2026
 
+### Optimizations & Performance
+
+- **Type Gem Growth & Generation**: Adapted type gem growth optimizations for Cobblemon 1.8.2, drastically reducing server lag during cave world generation and block ticks while cleaning up stray debug logs.
+
 ### Changed
 
 - **Cobblemon Compatibility Upgrade**: Updated Cobblemon dependency to `1.8.2+1.21.1`.
-- **Type Gem Growth Optimization**: Temporarily disabled `TypeGemCoreBlockMixin` due to upstream breaking changes in Cobblemon 1.8.2 (methods `forceGrow` and `grow` replaced with `expand`), preventing `InvalidInjectionException` server crashes during startup.
 
 ## [1.2.2] - 03-10-2026
 

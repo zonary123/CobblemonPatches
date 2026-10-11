@@ -1,30 +1,28 @@
 package org.kingpixel.cobblemonpatches.mixins.cobblemon;
 
+import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.tags.CobblemonBlockTags;
 import com.cobblemon.mod.common.block.TypeGemClusterBlock;
+import com.cobblemon.mod.common.block.TypeGemClusterBlock.GrowthType;
 import com.cobblemon.mod.common.block.TypeGemCoreBlock;
-import kotlin.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Optimizes {@link TypeGemCoreBlock} growth during world generation and random ticking.
- * Eliminates massive allocations from BFS (LinkedList/HashSet/Pair), removes redundant
- * collections shuffling, avoids map/registry key conversions, and skips wasteful block updates.
+ * Optimizes {@link TypeGemCoreBlock} expansion and ticking for Cobblemon 1.8.2+.
+ * Eliminates redundant nested BFS traversals, removes massive heap allocations
+ * (LinkedList, LinkedHashSet, ArrayList, Kotlin Pairs), and avoids debug logging in ticks.
  */
 @Mixin(value = TypeGemCoreBlock.class, remap = false)
 public abstract class TypeGemCoreBlockMixin {
@@ -33,164 +31,246 @@ public abstract class TypeGemCoreBlockMixin {
   private static final Direction[] DIRECTIONS = Direction.values();
 
   /**
-   * Replaces forced growth loop with an allocation-free growth routine.
+   * Intercepts standard expansion routine and executes an optimized, allocation-free expansion.
    *
-   * @param level      the structure world access instance
-   * @param pos        the core block position
-   * @param random     random generator
-   * @param percentage target growth fill percentage
-   * @param ci         callback info
-   */
-  @Inject(method = "forceGrow", at = @At("HEAD"), cancellable = true)
-  private void cobblemonPatchesForceGrow(WorldGenLevel level, BlockPos pos, RandomSource random, float percentage,
-                                         CallbackInfo ci) {
-    float desiredLength = TypeGemCoreBlock.MAX_CONNECTED_GEMS * percentage;
-    while (true) {
-      Pair<Boolean, Integer> growInfo = performOptimizedGrow(level, pos, random, true);
-      boolean grown = growInfo.getFirst();
-      int clusterSize = growInfo.getSecond();
-
-      if (!grown || clusterSize >= desiredLength) {
-        break;
-      }
-    }
-    ci.cancel();
-  }
-
-  /**
-   * Replaces standard growth tick with an allocation-free growth routine.
-   *
-   * @param level  the structure world access instance
-   * @param pos    the core block position
-   * @param random random generator
-   * @param forced whether growth is forced
-   * @param cir    callback returnable with growth status and cluster size
-   */
-  @Inject(method = "grow", at = @At("HEAD"), cancellable = true)
-  private void cobblemonPatchesGrow(WorldGenLevel level, BlockPos pos, RandomSource random, boolean forced,
-                                    CallbackInfoReturnable<Pair<Boolean, Integer>> cir) {
-    cir.setReturnValue(performOptimizedGrow(level, pos, random, forced));
-    cir.cancel();
-  }
-
-  /**
-   * Performs an optimized cluster growth check and placement using fixed-size arrays.
-   *
-   * @param level  the world level
+   * @param level  world access
    * @param pos    core position
-   * @param random random generator
-   * @param forced whether forced growth is enabled
-   * @return pair containing whether growth occurred and total gem count
+   * @param random random source
+   * @param forced whether growth is forced
+   * @param ci     callback info
    */
-  @Unique
-  private Pair<Boolean, Integer> performOptimizedGrow(WorldGenLevel level, BlockPos pos,
-                                                      RandomSource random, boolean forced) {
-    int maxCapacity = Math.max(16, TypeGemCoreBlock.MAX_CONNECTED_GEMS);
+  @Inject(method = "expand", at = @At("HEAD"), cancellable = true)
+  private void cobblemonPatchesExpand(LevelAccessor level, BlockPos pos, RandomSource random, boolean forced,
+                                      CallbackInfo ci) {
+    int maxConfig = Cobblemon.INSTANCE.getConfig().getTypeGemMaxConnected();
+    int maxCapacity = Math.max(64, maxConfig * 2);
     BlockPos[] gemPositions = new BlockPos[maxCapacity];
     BlockState[] gemStates = new BlockState[maxCapacity];
     int gemCount = collectConnectedGems(level, pos, gemPositions, gemStates);
 
-    if (gemCount >= TypeGemCoreBlock.MAX_CONNECTED_GEMS) {
-      if (!hasBreathingRoom(level, gemPositions, gemCount)) {
-        return new Pair<>(false, gemCount);
-      }
-      updateStuntState(level, gemPositions, gemCount, true);
-    } else {
-      updateStuntState(level, gemPositions, gemCount, false);
-    }
-
-    int[] gemIndices = new int[gemCount];
-    for (int i = 0; i < gemCount; i++) {
-      gemIndices[i] = i;
-    }
-    shuffleIndices(gemIndices, gemCount, random);
-
-    for (int g = 0; g < gemCount; g++) {
-      int idx = gemIndices[g];
-      BlockPos gemPos = gemPositions[idx];
-      BlockState gemState = gemStates[idx];
-
-      TypeGemClusterBlock clusterBlock = TypeGemClusterBlock.Companion.clusterFromGemBlock(gemState.getBlock());
-      if (clusterBlock == null) {
-        continue;
-      }
-
-      int newGemCount = tryGrowFromGem(level, gemPos, clusterBlock, random, forced, gemCount);
-      if (newGemCount > 0) {
-        return new Pair<>(true, newGemCount);
-      }
-    }
-
-    return new Pair<>(false, gemCount);
+    performOptimizedExpand(level, random, forced, gemPositions, gemStates, gemCount, maxConfig);
+    ci.cancel();
   }
 
   /**
-   * Attempts to grow a new cluster block from an existing gem position into adjacent air blocks.
+   * Intercepts random ticks to prevent redundant BFS scans, remove debug println,
+   * and reuse flat array collections.
    *
-   * @param level           world access
-   * @param gemPos          position of the source gem block
-   * @param clusterBlock    the target cluster block type
-   * @param random          random generator
-   * @param forced          whether growth is forced to advance
-   * @param currentGemCount current count of connected gems
-   * @return updated gem count if growth succeeded, 0 otherwise
+   * @param state  block state
+   * @param level  server level
+   * @param pos    core block position
+   * @param random random source
+   * @param ci     callback info
    */
-  @Unique
-  private static int tryGrowFromGem(WorldGenLevel level, BlockPos gemPos, TypeGemClusterBlock clusterBlock,
-                                    RandomSource random, boolean forced, int currentGemCount) {
-    int[] dirIndices = {0, 1, 2, 3, 4, 5};
-    shuffleIndices(dirIndices, 6, random);
-
-    for (int d = 0; d < 6; d++) {
-      Direction dir = DIRECTIONS[dirIndices[d]];
-      BlockPos targetPos = gemPos.relative(dir);
-
-      if (!level.getBlockState(targetPos).isAir()) {
-        continue;
-      }
-
-      placeClusterBlock(level, targetPos, clusterBlock, dir);
-
-      int finalGemCount = currentGemCount;
-      if (forced) {
-        advanceCluster(level, targetPos, random);
-        if (isGemBlock(level.getBlockState(targetPos))) {
-          finalGemCount++;
-        }
-      }
-      return finalGemCount;
+  @Inject(method = "randomTick", at = @At("HEAD"), cancellable = true, remap = true)
+  private void cobblemonPatchesRandomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random,
+                                          CallbackInfo ci) {
+    float tickChance = Cobblemon.INSTANCE.getConfig().getTypeGemTickChance();
+    if (random.nextFloat() >= tickChance) {
+      ci.cancel();
+      return;
     }
-    return 0;
+
+    int maxConfig = Cobblemon.INSTANCE.getConfig().getTypeGemMaxConnected();
+    int maxCapacity = Math.max(64, maxConfig * 2);
+    BlockPos[] gemPositions = new BlockPos[maxCapacity];
+    BlockState[] gemStates = new BlockState[maxCapacity];
+    int gemCount = collectConnectedGems(level, pos, gemPositions, gemStates);
+
+    int minGrowth = Cobblemon.INSTANCE.getConfig().getTypeGemMinGrowth();
+    if (gemCount < minGrowth) {
+      ensureFullGrowthCluster(level, gemPositions, gemCount, random);
+    }
+
+    performOptimizedExpand(level, random, false, gemPositions, gemStates, gemCount, maxConfig);
+    ci.cancel();
   }
 
   /**
-   * Places a fresh cluster block with the specified facing direction.
+   * Performs cluster placement and advancement without nested BFS calls.
    *
    * @param level        world access
-   * @param targetPos    position to place the cluster
-   * @param clusterBlock cluster block instance
-   * @param dir          facing direction
+   * @param random       random source
+   * @param forced       whether growth is forced
+   * @param gemPositions array of connected gem positions
+   * @param gemStates    array of corresponding block states
+   * @param gemCount     number of connected gems
+   * @param maxConfig    maximum allowed connected gems
    */
   @Unique
-  private static void placeClusterBlock(WorldGenLevel level, BlockPos targetPos,
-                                        TypeGemClusterBlock clusterBlock, Direction dir) {
-    BlockState placeState = clusterBlock.defaultBlockState()
-      .setValue(TypeGemClusterBlock.Companion.getFACING(), dir)
-      .setValue(TypeGemClusterBlock.Companion.getSTAGE(), 0)
-      .setValue(TypeGemClusterBlock.Companion.getSHOULD_GROW(), true)
-      .setValue(TypeGemClusterBlock.Companion.getSTUNTED(), false);
-    level.setBlock(targetPos, placeState, getUpdateFlags(level));
+  private static void performOptimizedExpand(LevelAccessor level, RandomSource random, boolean forced,
+                                             BlockPos[] gemPositions, BlockState[] gemStates,
+                                             int gemCount, int maxConfig) {
+    boolean overCapacity = gemCount > maxConfig;
+    float growthChance = Cobblemon.INSTANCE.getConfig().getTypeGemGrowthChance();
+
+    for (int i = 0; i < gemCount; i++) {
+      BlockPos gemPos = gemPositions[i];
+      BlockState gemState = gemStates[i];
+
+      for (Direction dir : DIRECTIONS) {
+        tryPlaceAdjacentCluster(level, gemPos, gemState, dir, growthChance, overCapacity, random);
+        tryAdvanceAdjacentCluster(level, gemPos, dir, growthChance, forced, random);
+      }
+    }
   }
 
   /**
-   * Computes appropriate block update flags depending on world type.
-   *
-   * @param level world access
-   * @return block update flag bitmask
+   * Attempts to spawn a new cluster block in an adjacent air position.
    */
   @Unique
-  private static int getUpdateFlags(LevelAccessor level) {
-    return level instanceof ServerLevel ? Block.UPDATE_ALL : Block.UPDATE_CLIENTS;
+  private static void tryPlaceAdjacentCluster(LevelAccessor level, BlockPos gemPos, BlockState gemState,
+                                              Direction dir, float growthChance, boolean overCapacity,
+                                              RandomSource random) {
+    if (random.nextFloat() >= growthChance) {
+      return;
+    }
+
+    BlockPos neighborPos = gemPos.relative(dir);
+    if (!level.getBlockState(neighborPos).isAir()) {
+      return;
+    }
+
+    TypeGemClusterBlock clusterBlock = TypeGemClusterBlock.Companion.clusterFromGemBlock(gemState.getBlock());
+    if (clusterBlock == null) {
+      return;
+    }
+
+    GrowthType growthType = pickGrowthType(overCapacity, random);
+    BlockState placeState = clusterBlock.defaultBlockState()
+      .setValue(TypeGemClusterBlock.Companion.getFACING(), dir)
+      .setValue(TypeGemClusterBlock.Companion.getGROWTH_TYPE(), growthType);
+    level.setBlock(neighborPos, placeState, Block.UPDATE_ALL);
+  }
+
+  /**
+   * Advances growth stage of an adjacent cluster if it faces the parent gem block.
+   */
+  @Unique
+  private static void tryAdvanceAdjacentCluster(LevelAccessor level, BlockPos gemPos, Direction dir,
+                                                float growthChance, boolean forced, RandomSource random) {
+    BlockPos neighborPos = gemPos.relative(dir);
+    BlockState neighborState = level.getBlockState(neighborPos);
+
+    if (!(neighborState.getBlock() instanceof TypeGemClusterBlock clusterBlock)) {
+      return;
+    }
+
+    if (neighborState.getValue(TypeGemClusterBlock.Companion.getFACING()) != dir) {
+      return;
+    }
+
+    if (forced || random.nextFloat() < growthChance) {
+      clusterBlock.advanceGrowth(neighborState, level, neighborPos, random);
+    }
+  }
+
+  /**
+   * Ensures at least one cluster is marked as FULL if below min growth, without debug logging.
+   *
+   * @param level        server level
+   * @param gemPositions array of connected gem positions
+   * @param gemCount     number of connected gems
+   * @param random       random source
+   */
+  @Unique
+  private static void ensureFullGrowthCluster(ServerLevel level, BlockPos[] gemPositions, int gemCount,
+                                              RandomSource random) {
+    int clusterCapacity = Math.min(64, gemCount * 6);
+    BlockPos[] clusterPositions = new BlockPos[clusterCapacity];
+    BlockState[] clusterStates = new BlockState[clusterCapacity];
+
+    int candidateCount = collectClusterCandidates(level, gemPositions, gemCount, clusterPositions, clusterStates);
+    if (candidateCount <= 0) {
+      return;
+    }
+
+    int chosen = random.nextInt(candidateCount);
+    BlockPos chosenPos = clusterPositions[chosen];
+    BlockState chosenState = clusterStates[chosen];
+    BlockState updated = chosenState.setValue(TypeGemClusterBlock.Companion.getGROWTH_TYPE(), GrowthType.FULL);
+    level.setBlockAndUpdate(chosenPos, updated);
+  }
+
+  /**
+   * Scans adjacent clusters and returns the number of candidate clusters, or -1 if a FULL cluster already exists.
+   */
+  @Unique
+  private static int collectClusterCandidates(ServerLevel level, BlockPos[] gemPositions, int gemCount,
+                                              BlockPos[] clusterPositions, BlockState[] clusterStates) {
+    int count = 0;
+    for (int i = 0; i < gemCount; i++) {
+      BlockPos gemPos = gemPositions[i];
+      for (Direction dir : DIRECTIONS) {
+        count = checkNeighborCluster(level, gemPos.relative(dir), clusterPositions, clusterStates, count);
+        if (count == -1) {
+          return -1;
+        }
+      }
+    }
+    return count;
+  }
+
+  @Unique
+  private static int checkNeighborCluster(ServerLevel level, BlockPos neighborPos,
+                                          BlockPos[] clusterPositions, BlockState[] clusterStates, int count) {
+    if (isAlreadyVisited(clusterPositions, count, neighborPos)) {
+      return count;
+    }
+
+    BlockState neighborState = level.getBlockState(neighborPos);
+    if (!(neighborState.getBlock() instanceof TypeGemClusterBlock)) {
+      return count;
+    }
+
+    if (neighborState.getValue(TypeGemClusterBlock.Companion.getGROWTH_TYPE()) == GrowthType.FULL) {
+      return -1;
+    }
+
+    if (count < clusterPositions.length) {
+      clusterPositions[count] = neighborPos;
+      clusterStates[count] = neighborState;
+      return count + 1;
+    }
+    return count;
+  }
+
+  /**
+   * Selects a growth type according to weighted distribution and capacity constraints.
+   *
+   * @param overCapacity whether connected gems exceed max capacity
+   * @param random       random source
+   * @return selected growth type
+   */
+  @Unique
+  private static GrowthType pickGrowthType(boolean overCapacity, RandomSource random) {
+    if (overCapacity) {
+      float chanceDeco = GrowthType.DECORATION.getChance();
+      float chanceStunted = GrowthType.STUNTED.getChance();
+      float total = chanceDeco + chanceStunted;
+      if (total <= 0.0f) {
+        return GrowthType.DECORATION;
+      }
+      float roll = random.nextFloat() * total;
+      return roll < chanceDeco ? GrowthType.DECORATION : GrowthType.STUNTED;
+    }
+
+    float chanceDeco = GrowthType.DECORATION.getChance();
+    float chanceFull = GrowthType.FULL.getChance();
+    float chanceStunted = GrowthType.STUNTED.getChance();
+    float total = chanceDeco + chanceFull + chanceStunted;
+    if (total <= 0.0f) {
+      return GrowthType.DECORATION;
+    }
+    float roll = random.nextFloat() * total;
+    if (roll < chanceDeco) {
+      return GrowthType.DECORATION;
+    }
+    roll -= chanceDeco;
+    if (roll < chanceFull) {
+      return GrowthType.FULL;
+    }
+    return GrowthType.STUNTED;
   }
 
   /**
@@ -246,106 +326,6 @@ public abstract class TypeGemCoreBlockMixin {
       }
     }
     return false;
-  }
-
-  /**
-   * Updates stunted status across all adjacent cluster blocks.
-   *
-   * @param level        world access
-   * @param gemPositions array of gem block positions
-   * @param gemCount     number of gem blocks
-   * @param stunted      target stunted boolean state
-   */
-  @Unique
-  private static void updateStuntState(LevelAccessor level, BlockPos[] gemPositions, int gemCount, boolean stunted) {
-    for (int i = 0; i < gemCount; i++) {
-      BlockPos gemPos = gemPositions[i];
-      for (Direction dir : DIRECTIONS) {
-        applyStuntToNeighbor(level, gemPos.relative(dir), stunted);
-      }
-    }
-  }
-
-  /**
-   * Updates cluster properties on a neighbor block if it matches {@link TypeGemClusterBlock}.
-   *
-   * @param level       world access
-   * @param neighborPos neighbor position
-   * @param stunted     stunted state
-   */
-  @Unique
-  private static void applyStuntToNeighbor(LevelAccessor level, BlockPos neighborPos, boolean stunted) {
-    BlockState state = level.getBlockState(neighborPos);
-    if (!(state.getBlock() instanceof TypeGemClusterBlock)) {
-      return;
-    }
-
-    BooleanProperty stuntedProp = TypeGemClusterBlock.Companion.getSTUNTED();
-    if (state.hasProperty(stuntedProp) && state.getValue(stuntedProp) != stunted) {
-      BlockState updated = state.setValue(stuntedProp, stunted);
-      BooleanProperty growProp = TypeGemClusterBlock.Companion.getSHOULD_GROW();
-      if (updated.hasProperty(growProp)) {
-        updated = updated.setValue(growProp, !stunted);
-      }
-      level.setBlock(neighborPos, updated, getUpdateFlags(level));
-    }
-  }
-
-  /**
-   * Checks whether at least one neighbor position is air, allowing room for growth.
-   *
-   * @param level        structure world access
-   * @param gemPositions array of gem positions
-   * @param gemCount     number of gem positions
-   * @return true if any neighboring position is air
-   */
-  @Unique
-  private static boolean hasBreathingRoom(WorldGenLevel level, BlockPos[] gemPositions, int gemCount) {
-    for (int i = 0; i < gemCount; i++) {
-      BlockPos gemPos = gemPositions[i];
-      for (Direction dir : DIRECTIONS) {
-        if (level.getBlockState(gemPos.relative(dir)).isAir()) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Fast-forwards cluster growth stages up to 5 iterations.
-   *
-   * @param level      structure world access
-   * @param clusterPos position of the cluster block
-   * @param random     random generator
-   */
-  @Unique
-  private static void advanceCluster(WorldGenLevel level, BlockPos clusterPos, RandomSource random) {
-    for (int i = 0; i < 5; i++) {
-      BlockState clusterState = level.getBlockState(clusterPos);
-      if (clusterState.getBlock() instanceof TypeGemClusterBlock clusterBlock) {
-        clusterBlock.advanceGrowth(clusterState, level, clusterPos, random);
-      } else {
-        break;
-      }
-    }
-  }
-
-  /**
-   * In-place Fisher-Yates array shuffling using Minecraft's Random instance.
-   *
-   * @param array  array to shuffle
-   * @param length number of elements to shuffle
-   * @param random random generator
-   */
-  @Unique
-  private static void shuffleIndices(int[] array, int length, RandomSource random) {
-    for (int i = length - 1; i > 0; i--) {
-      int j = random.nextInt(i + 1);
-      int tmp = array[i];
-      array[i] = array[j];
-      array[j] = tmp;
-    }
   }
 
   /**
