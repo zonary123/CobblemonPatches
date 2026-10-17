@@ -28,7 +28,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class TypeGemCoreBlockMixin {
 
   @Unique
-  private static final Direction[] DIRECTIONS = Direction.values();
+  private static final Direction[] cobblemonPatches$DIRECTIONS = Direction.values();
 
   /**
    * Intercepts standard expansion routine and executes an optimized, allocation-free expansion.
@@ -46,9 +46,9 @@ public abstract class TypeGemCoreBlockMixin {
     int maxCapacity = Math.max(64, maxConfig * 2);
     BlockPos[] gemPositions = new BlockPos[maxCapacity];
     BlockState[] gemStates = new BlockState[maxCapacity];
-    int gemCount = collectConnectedGems(level, pos, gemPositions, gemStates);
+    int gemCount = cobblemonPatches$collectConnectedGems(level, pos, gemPositions, gemStates);
 
-    performOptimizedExpand(level, random, forced, gemPositions, gemStates, gemCount, maxConfig);
+    cobblemonPatches$performOptimizedExpand(level, random, forced, gemPositions, gemStates, gemCount, maxConfig);
     ci.cancel();
   }
 
@@ -75,14 +75,14 @@ public abstract class TypeGemCoreBlockMixin {
     int maxCapacity = Math.max(64, maxConfig * 2);
     BlockPos[] gemPositions = new BlockPos[maxCapacity];
     BlockState[] gemStates = new BlockState[maxCapacity];
-    int gemCount = collectConnectedGems(level, pos, gemPositions, gemStates);
+    int gemCount = cobblemonPatches$collectConnectedGems(level, pos, gemPositions, gemStates);
 
     int minGrowth = Cobblemon.INSTANCE.getConfig().getTypeGemMinGrowth();
     if (gemCount < minGrowth) {
-      ensureFullGrowthCluster(level, gemPositions, gemCount, random);
+      cobblemonPatches$ensureFullGrowthCluster(level, gemPositions, gemCount, random);
     }
 
-    performOptimizedExpand(level, random, false, gemPositions, gemStates, gemCount, maxConfig);
+    cobblemonPatches$performOptimizedExpand(level, random, false, gemPositions, gemStates, gemCount, maxConfig);
     ci.cancel();
   }
 
@@ -98,9 +98,9 @@ public abstract class TypeGemCoreBlockMixin {
    * @param maxConfig    maximum allowed connected gems
    */
   @Unique
-  private static void performOptimizedExpand(LevelAccessor level, RandomSource random, boolean forced,
-                                             BlockPos[] gemPositions, BlockState[] gemStates,
-                                             int gemCount, int maxConfig) {
+  private static void cobblemonPatches$performOptimizedExpand(LevelAccessor level, RandomSource random, boolean forced,
+                                                              BlockPos[] gemPositions, BlockState[] gemStates,
+                                                              int gemCount, int maxConfig) {
     boolean overCapacity = gemCount > maxConfig;
     float growthChance = Cobblemon.INSTANCE.getConfig().getTypeGemGrowthChance();
 
@@ -108,9 +108,9 @@ public abstract class TypeGemCoreBlockMixin {
       BlockPos gemPos = gemPositions[i];
       BlockState gemState = gemStates[i];
 
-      for (Direction dir : DIRECTIONS) {
-        tryPlaceAdjacentCluster(level, gemPos, gemState, dir, growthChance, overCapacity, random);
-        tryAdvanceAdjacentCluster(level, gemPos, dir, growthChance, forced, random);
+      for (Direction dir : cobblemonPatches$DIRECTIONS) {
+        cobblemonPatches$tryPlaceAdjacentCluster(level, gemPos, gemState, dir, growthChance, overCapacity, random);
+        cobblemonPatches$tryAdvanceAdjacentCluster(level, gemPos, dir, growthChance, forced, random);
       }
     }
   }
@@ -119,9 +119,9 @@ public abstract class TypeGemCoreBlockMixin {
    * Attempts to spawn a new cluster block in an adjacent air position.
    */
   @Unique
-  private static void tryPlaceAdjacentCluster(LevelAccessor level, BlockPos gemPos, BlockState gemState,
-                                              Direction dir, float growthChance, boolean overCapacity,
-                                              RandomSource random) {
+  private static void cobblemonPatches$tryPlaceAdjacentCluster(LevelAccessor level, BlockPos gemPos, BlockState gemState,
+                                                               Direction dir, float growthChance, boolean overCapacity,
+                                                               RandomSource random) {
     if (random.nextFloat() >= growthChance) {
       return;
     }
@@ -136,7 +136,7 @@ public abstract class TypeGemCoreBlockMixin {
       return;
     }
 
-    GrowthType growthType = pickGrowthType(overCapacity, random);
+    GrowthType growthType = cobblemonPatches$pickGrowthType(overCapacity, random);
     BlockState placeState = clusterBlock.defaultBlockState()
       .setValue(TypeGemClusterBlock.Companion.getFACING(), dir)
       .setValue(TypeGemClusterBlock.Companion.getGROWTH_TYPE(), growthType);
@@ -147,8 +147,8 @@ public abstract class TypeGemCoreBlockMixin {
    * Advances growth stage of an adjacent cluster if it faces the parent gem block.
    */
   @Unique
-  private static void tryAdvanceAdjacentCluster(LevelAccessor level, BlockPos gemPos, Direction dir,
-                                                float growthChance, boolean forced, RandomSource random) {
+  private static void cobblemonPatches$tryAdvanceAdjacentCluster(LevelAccessor level, BlockPos gemPos, Direction dir,
+                                                                 float growthChance, boolean forced, RandomSource random) {
     BlockPos neighborPos = gemPos.relative(dir);
     BlockState neighborState = level.getBlockState(neighborPos);
 
@@ -174,13 +174,13 @@ public abstract class TypeGemCoreBlockMixin {
    * @param random       random source
    */
   @Unique
-  private static void ensureFullGrowthCluster(ServerLevel level, BlockPos[] gemPositions, int gemCount,
-                                              RandomSource random) {
+  private static void cobblemonPatches$ensureFullGrowthCluster(ServerLevel level, BlockPos[] gemPositions, int gemCount,
+                                                               RandomSource random) {
     int clusterCapacity = Math.min(64, gemCount * 6);
     BlockPos[] clusterPositions = new BlockPos[clusterCapacity];
     BlockState[] clusterStates = new BlockState[clusterCapacity];
 
-    int candidateCount = collectClusterCandidates(level, gemPositions, gemCount, clusterPositions, clusterStates);
+    int candidateCount = cobblemonPatches$collectClusterCandidates(level, gemPositions, gemCount, clusterPositions, clusterStates);
     if (candidateCount <= 0) {
       return;
     }
@@ -196,13 +196,13 @@ public abstract class TypeGemCoreBlockMixin {
    * Scans adjacent clusters and returns the number of candidate clusters, or -1 if a FULL cluster already exists.
    */
   @Unique
-  private static int collectClusterCandidates(ServerLevel level, BlockPos[] gemPositions, int gemCount,
-                                              BlockPos[] clusterPositions, BlockState[] clusterStates) {
+  private static int cobblemonPatches$collectClusterCandidates(ServerLevel level, BlockPos[] gemPositions, int gemCount,
+                                                               BlockPos[] clusterPositions, BlockState[] clusterStates) {
     int count = 0;
     for (int i = 0; i < gemCount; i++) {
       BlockPos gemPos = gemPositions[i];
-      for (Direction dir : DIRECTIONS) {
-        count = checkNeighborCluster(level, gemPos.relative(dir), clusterPositions, clusterStates, count);
+      for (Direction dir : cobblemonPatches$DIRECTIONS) {
+        count = cobblemonPatches$checkNeighborCluster(level, gemPos.relative(dir), clusterPositions, clusterStates, count);
         if (count == -1) {
           return -1;
         }
@@ -212,9 +212,9 @@ public abstract class TypeGemCoreBlockMixin {
   }
 
   @Unique
-  private static int checkNeighborCluster(ServerLevel level, BlockPos neighborPos,
-                                          BlockPos[] clusterPositions, BlockState[] clusterStates, int count) {
-    if (isAlreadyVisited(clusterPositions, count, neighborPos)) {
+  private static int cobblemonPatches$checkNeighborCluster(ServerLevel level, BlockPos neighborPos,
+                                                           BlockPos[] clusterPositions, BlockState[] clusterStates, int count) {
+    if (cobblemonPatches$isAlreadyVisited(clusterPositions, count, neighborPos)) {
       return count;
     }
 
@@ -240,10 +240,11 @@ public abstract class TypeGemCoreBlockMixin {
    *
    * @param overCapacity whether connected gems exceed max capacity
    * @param random       random source
+   *
    * @return selected growth type
    */
   @Unique
-  private static GrowthType pickGrowthType(boolean overCapacity, RandomSource random) {
+  private static GrowthType cobblemonPatches$pickGrowthType(boolean overCapacity, RandomSource random) {
     if (overCapacity) {
       float chanceDeco = GrowthType.DECORATION.getChance();
       float chanceStunted = GrowthType.STUNTED.getChance();
@@ -280,11 +281,12 @@ public abstract class TypeGemCoreBlockMixin {
    * @param origin       origin block pos
    * @param outPositions output array for discovered positions
    * @param outStates    output array for corresponding block states
+   *
    * @return total number of connected gem blocks discovered
    */
   @Unique
-  private static int collectConnectedGems(BlockGetter level, BlockPos origin,
-                                          BlockPos[] outPositions, BlockState[] outStates) {
+  private static int cobblemonPatches$collectConnectedGems(BlockGetter level, BlockPos origin,
+                                                           BlockPos[] outPositions, BlockState[] outStates) {
     int count = 0;
     outPositions[count] = origin;
     outStates[count] = level.getBlockState(origin);
@@ -293,14 +295,14 @@ public abstract class TypeGemCoreBlockMixin {
     int head = 0;
     while (head < count) {
       BlockPos current = outPositions[head++];
-      for (Direction dir : DIRECTIONS) {
+      for (Direction dir : cobblemonPatches$DIRECTIONS) {
         BlockPos neighbor = current.relative(dir);
-        if (isAlreadyVisited(outPositions, count, neighbor)) {
+        if (cobblemonPatches$isAlreadyVisited(outPositions, count, neighbor)) {
           continue;
         }
 
         BlockState neighborState = level.getBlockState(neighbor);
-        if (isGemBlock(neighborState) && count < outPositions.length) {
+        if (cobblemonPatches$isGemBlock(neighborState) && count < outPositions.length) {
           outPositions[count] = neighbor;
           outStates[count] = neighborState;
           count++;
@@ -316,10 +318,11 @@ public abstract class TypeGemCoreBlockMixin {
    * @param positions array of positions
    * @param count     number of valid entries in array
    * @param target    position being searched
+   *
    * @return true if position is present
    */
   @Unique
-  private static boolean isAlreadyVisited(BlockPos[] positions, int count, BlockPos target) {
+  private static boolean cobblemonPatches$isAlreadyVisited(BlockPos[] positions, int count, BlockPos target) {
     for (int i = 0; i < count; i++) {
       if (positions[i].equals(target)) {
         return true;
@@ -332,10 +335,11 @@ public abstract class TypeGemCoreBlockMixin {
    * Checks if the given block state belongs to Cobblemon type gem blocks.
    *
    * @param state block state to check
+   *
    * @return true if tagged as a type gem block
    */
   @Unique
-  private static boolean isGemBlock(BlockState state) {
+  private static boolean cobblemonPatches$isGemBlock(BlockState state) {
     return state.is(CobblemonBlockTags.TYPE_GEM_BLOCKS);
   }
 }

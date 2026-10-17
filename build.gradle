@@ -24,6 +24,18 @@ subprojects {
     apply plugin: "dev.architectury.loom"
     version = rootProject.version
 
+    configurations.configureEach {
+        resolutionStrategy {
+            force "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+            eachDependency { details ->
+                if (details.requested.group == "net.fabricmc" && details.requested.name == "fabric-loader") {
+                    details.useVersion(rootProject.fabric_loader_version)
+                    details.because("Prevent dynamic '+' lookups that time out against maven.fabricmc.net")
+                }
+            }
+        }
+    }
+
     loom {
         silentMojangMappingsLicense()
     }

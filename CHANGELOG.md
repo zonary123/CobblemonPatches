@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.4] - 17-10-2026
+
+### Bug Fixes & Stability
+
+- **Type Gem Growth in Player Farms**: Fixed an issue where Type Gems used for TM crafting stopped growing completely due to the `randomTick` growth logic being [commented out in Cobblemon](https://gitlab.com/cable-mc/cobblemon/-/blob/1.8.2/common/src/main/kotlin/com/cobblemon/mod/common/block/TypeGemClusterBlock.kt#L109). Restored block ticking and placement states so buds and clusters planted on gem blocks or crystal cores now grow normally over time.
+
 ## [1.2.3] - 11-10-2026
 
 ### Optimizations & Performance
