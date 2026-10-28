@@ -180,6 +180,13 @@ public abstract class PokemonBattleMixin {
 
   @Unique
   private void checkInactivityTimeout(PokemonBattle self) {
+    ModConfig config = CobblemonPatches.getConfig();
+    int timeoutSeconds = config.getBattleInactivityTimeoutSeconds();
+    if (timeoutSeconds <= 0) {
+      this.inactivityTicks = 0;
+      return;
+    }
+
     boolean waitingForInput = false;
     for (BattleActor actor : self.getActors()) {
       if (actor.getMustChoose()) {
@@ -190,9 +197,8 @@ public abstract class PokemonBattleMixin {
 
     if (waitingForInput) {
       this.inactivityTicks++;
-      if (this.inactivityTicks > 2400) {
-        Cobblemon.LOGGER.warn("Battle {} timed out after 120s of total inactivity/lock. Resolving to prevent freeze.", self.getBattleId());
-        ModConfig config = CobblemonPatches.getConfig();
+      if (this.inactivityTicks > timeoutSeconds * 20) {
+        Cobblemon.LOGGER.warn("Battle {} timed out after {}s of total inactivity/lock. Resolving to prevent freeze.", self.getBattleId(), timeoutSeconds);
         Component timeoutMsg = TextUtils.parse(config.getBattleInactivityTimeoutMessage());
         self.broadcastChatMessage(timeoutMsg);
         self.stop();

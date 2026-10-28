@@ -6,6 +6,11 @@ package org.kingpixel.cobblemonpatches.config;
 public class ModConfig {
   private boolean debug = false;
 
+  /**
+   * Seconds a battle may wait on player input before it is force-ended. Set to -1 to disable.
+   */
+  private int battleInactivityTimeoutSeconds = 120;
+
   private String battleInactivityTimeoutMessage = "&cBattle timed out due to inactivity.";
 
   private int autosaveStoresPerTick = 2;
@@ -20,6 +25,14 @@ public class ModConfig {
 
   public void setDebug(boolean debug) {
     this.debug = debug;
+  }
+
+  public int getBattleInactivityTimeoutSeconds() {
+    return this.battleInactivityTimeoutSeconds;
+  }
+
+  public void setBattleInactivityTimeoutSeconds(int battleInactivityTimeoutSeconds) {
+    this.battleInactivityTimeoutSeconds = battleInactivityTimeoutSeconds;
   }
 
   public String getBattleInactivityTimeoutMessage() {
