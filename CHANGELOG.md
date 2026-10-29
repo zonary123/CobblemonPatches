@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.6] - 30-10-2026
+
+### Bug Fixes & Stability
+
+- **TM Machine Remote Access & Dupe Fix**: Fixed an issue where the TM Machine interface remained open indefinitely when moving away or breaking the block, preventing remote crafting and duplication exploits.
+
+## [1.2.5] - 18-10-2026
+
+### Added
+
+- **Configurable Battle Inactivity Timeout**: Added `battleInactivityTimeoutSeconds` (default `120`) to `cobblemonpatches.json`. Setting this value to `0` or `-1` completely disables the inactivity watchdog for servers that prefer unconstrained battles or custom forfeit systems.
+- **Built-in Documentation (WIKI.md)**: Added a comprehensive wiki guide that automatically extracts into `config/cobblemonpatches/` on server startup, documenting all active optimizations, anti-lag features, and configuration settings.
+
 ## [1.2.4] - 17-10-2026
 
 ### Bug Fixes & Stability

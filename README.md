@@ -61,10 +61,14 @@ For a detailed technical breakdown of every patch, see [`FIXEDS.md`](FIXEDS.md).
 ```json
 {
   "debug": false,
+  "battleInactivityTimeoutSeconds": 120,
   "battleInactivityTimeoutMessage": "&cBattle timed out due to inactivity.",
   "autosaveStoresPerTick": 2
 }
 ```
+
+> [!NOTE]
+> Set `battleInactivityTimeoutSeconds` to `0` or `-1` to disable the battle inactivity timeout completely.
  
 ---
  

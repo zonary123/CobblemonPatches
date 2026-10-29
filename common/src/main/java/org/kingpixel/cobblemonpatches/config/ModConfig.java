@@ -1,10 +1,17 @@
 package org.kingpixel.cobblemonpatches.config;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Configuration options for Cobblemon Patches.
  */
+@Getter
+@Setter
 public class ModConfig {
   private boolean debug = false;
+
+  private int battleInactivityTimeoutSeconds = 120;
 
   private String battleInactivityTimeoutMessage = "&cBattle timed out due to inactivity.";
 
@@ -12,29 +19,5 @@ public class ModConfig {
 
   public ModConfig() {
     // Default constructor for GSON deserialization
-  }
-
-  public boolean isDebug() {
-    return this.debug;
-  }
-
-  public void setDebug(boolean debug) {
-    this.debug = debug;
-  }
-
-  public String getBattleInactivityTimeoutMessage() {
-    return this.battleInactivityTimeoutMessage;
-  }
-
-  public void setBattleInactivityTimeoutMessage(String battleInactivityTimeoutMessage) {
-    this.battleInactivityTimeoutMessage = battleInactivityTimeoutMessage;
-  }
-
-  public int getAutosaveStoresPerTick() {
-    return this.autosaveStoresPerTick;
-  }
-
-  public void setAutosaveStoresPerTick(int autosaveStoresPerTick) {
-    this.autosaveStoresPerTick = autosaveStoresPerTick;
   }
 }

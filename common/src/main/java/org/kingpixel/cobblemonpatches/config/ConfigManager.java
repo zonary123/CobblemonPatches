@@ -29,6 +29,7 @@ public class ConfigManager {
   }
 
   public static ModConfig load() {
+    extractWiki();
     if (Files.exists(CONFIG_PATH)) {
       try (BufferedReader reader = Files.newBufferedReader(CONFIG_PATH)) {
         ModConfig loaded = GSON.fromJson(reader, ModConfig.class);
@@ -45,6 +46,23 @@ public class ConfigManager {
     config = new ModConfig();
     save();
     return config;
+  }
+
+  public static void extractWiki() {
+    try {
+      Path wikiDir = Platform.getConfigFolder().resolve("cobblemonpatches");
+      if (!Files.exists(wikiDir)) {
+        Files.createDirectories(wikiDir);
+      }
+      Path wikiFile = wikiDir.resolve("WIKI.md");
+      try (var in = CobblemonPatches.class.getClassLoader().getResourceAsStream("WIKI.md")) {
+        if (in != null) {
+          Files.copy(in, wikiFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
+      }
+    } catch (Exception e) {
+      CobblemonPatches.LOGGER.error("Failed to extract WIKI.md", e);
+    }
   }
 
   public static void save() {
