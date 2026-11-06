@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.7] - 06-11-2026
+
+### Bug Fixes & Stability
+
+- **Mounted Entity Despawning Fix**: Fixed an issue where `isVehicle()` was checked instead of `isPassenger()`, causing Pokémon and entities riding boats, minecarts, or other mounts to mistakenly despawn over time.
+
 ## [1.2.6] - 30-10-2026
 
 ### Bug Fixes & Stability

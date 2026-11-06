@@ -16,7 +16,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Optimizes entity despawning checks in {@link CobblemonAgingDespawner}.
- * Throttles player distance checks to 1-second intervals and uses squared-distance
+ * Throttles player distance checks to 1-second intervals and uses
+ * squared-distance
  * comparisons to eliminate continuous Math.sqrt and collection allocations.
  */
 @Mixin(value = CobblemonAgingDespawner.class, remap = false)
@@ -35,8 +36,10 @@ public abstract class CobblemonAgingDespawnerMixin<T extends Entity> {
   private int youngToOld;
 
   /**
-   * Evaluates entity despawning rules every 20 ticks (1 second) using squared-distance checks
-   * against active players, avoiding unnecessary square root calculations and collection allocations.
+   * Evaluates entity despawning rules every 20 ticks (1 second) using
+   * squared-distance checks
+   * against active players, avoiding unnecessary square root calculations and
+   * collection allocations.
    *
    * @param entity the entity being evaluated for despawn
    * @param cir    callback returnable with despawn decision
@@ -56,7 +59,7 @@ public abstract class CobblemonAgingDespawnerMixin<T extends Entity> {
     int age = this.getAgeTicks.invoke(entity);
     if (age < Cobblemon.INSTANCE.getConfig().getDespawnerMinAgeTicks()
         || (entity instanceof PokemonEntity pokemonEntity && pokemonEntity.isBusy())
-        || entity.isVehicle()) {
+        || entity.isPassenger()) {
       cir.setReturnValue(false);
       return;
     }
@@ -74,7 +77,8 @@ public abstract class CobblemonAgingDespawnerMixin<T extends Entity> {
 
     double closestDistSq = Double.MAX_VALUE;
     for (Player player : players) {
-      if (player == null) continue;
+      if (player == null)
+        continue;
       double distSq = entity.distanceToSqr(player);
       if (distSq < closestDistSq) {
         closestDistSq = distSq;
