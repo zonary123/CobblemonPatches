@@ -69,35 +69,3 @@ sourcesJar {
     dependsOn commonSources
     from commonSources.archiveFile.map { zipTree(it) }
 }
-
-tasks.register("apiJar", Jar) {
-    dependsOn project(":common").tasks.named("classes")
-    archiveClassifier.set("api")
-    from(project(":common").sourceSets.main.output) {
-        include "org/kingpixel/cobblemonpatches/api/**"
-        include "org/kingpixel/cobblemonpatches/application/**"
-        include "org/kingpixel/cobblemonpatches/models/**"
-    }
-}
-
-artifacts {
-    archives tasks.named("apiJar")
-}
-
-tasks.named("build") {
-    dependsOn tasks.named("apiJar")
-}
-
-tasks.named("assemble") {
-    dependsOn tasks.named("apiJar")
-}
-
-publishing {
-    publications {
-        create("mavenFabric", MavenPublication) {
-            artifactId = project.archivesBaseName
-            from components.java
-            artifact tasks.named("apiJar")
-        }
-    }
-}

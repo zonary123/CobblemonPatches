@@ -74,10 +74,6 @@ allprojects {
         options.release = 21
     }
 
-    tasks.withType(Test).configureEach {
-        useJUnitPlatform()
-    }
-
     java {
         def targetJavaVersion = 21
         def javaVersion = JavaVersion.toVersion(targetJavaVersion)
