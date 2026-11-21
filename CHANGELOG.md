@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.0] - 2026-11-20
+
+### Added
+
+- **Public Developer API & Integration Standard**: Introduced an official, clean public API (`CobblemonPatchesAPI`) and dedicated developer JAR (`-api.jar`) allowing server owners and add-on developers to safely interact with, monitor, and toggle patches programmatically without depending on mod internals.
+- **Dynamic Patch Management & Live Monitoring**: Added rich query and action services to inspect patch statuses, review active performance settings, and safely toggle optimizations at runtime.
+- **Automated API Distribution**: Integrated automated API library builds and release pipelines for seamless distribution on GitHub and Discord.
+
+## [1.2.8] - 19-11-2026
+
+### Bug Fixes & Stability
+
+- **Showdown Closed Stream Server Crash Fix**: Prevented a server tick crash (`TypeError: Cannot read property 'write' of undefined`) when stopping or sending actions to a battle whose Showdown JS stream was already closed, ensuring the battle cleanly terminates and releases players/entities instead of crashing or remaining stuck.
+
 ## [1.2.7] - 06-11-2026
 
 ### Bug Fixes & Stability

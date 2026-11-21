@@ -7,6 +7,7 @@ on:
 env:
   DISCORD_COBBLEMON: ${{ secrets.DISCORD_COBBLEMON }}
   DISCORD_ZONARY123: ${{ secrets.DISCORD_ZONARY123 }}
+  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
   MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -46,19 +47,27 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
       - name: Build mod
-        run: ./gradlew build remapJar --no-daemon
+        run: ./gradlew build remapJar apiJar --no-daemon
+
+      - name: Collect release jars
+        run: |
+          mkdir -p release_libs
+          find fabric/build/libs neoforge/build/libs -type f -name "*.jar" ! -name "*-sources.jar" ! -name "*-dev-shadow.jar" ! -name "*-dev.jar" -exec cp {} release_libs/ \;
+          ls -la release_libs/
+          COUNT=$(ls -1 release_libs/*.jar 2>/dev/null | wc -l)
+          if [ "$COUNT" -eq 0 ]; then
+            echo "Error: No release jars found in fabric/build/libs or neoforge/build/libs!"
+            exit 1
+          fi
 
       - name: Create GitHub Release
         run: |
-          gh release create "$TAG" fabric/build/libs/*.jar neoforge/build/libs/*.jar \
+          gh release create "$TAG" release_libs/*.jar \
             --title "Release $TAG" \
             --notes "Automated release for version $TAG"
 
       - name: Send Discord Notifications
         run: |
-          FABRIC_FILE=$(ls fabric/build/libs/*.jar | grep -v "sources" | grep -v "dev-shadow" | head -n1)
-          NEOFORGE_FILE=$(ls neoforge/build/libs/*.jar | grep -v "sources" | grep -v "dev-shadow" | head -n1)
-
           # Extraer changelog
           BASE=$(echo "$TAG" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
           CHANGELOG_CONTENT=$(tr -d '\r' < CHANGELOG.md | awk -v ver="$BASE" '
@@ -123,20 +132,18 @@ jobs:
                 -F "file=@${CHANGELOG_FILE}"
             fi
 
-            # 3️⃣ Enviar archivo Fabric
-            if [ -n "$FABRIC_FILE" ] && [ -f "$FABRIC_FILE" ]; then
-              curl -s -X POST "$WEBHOOK" \
-                -F "file=@${FABRIC_FILE}"
-            fi
-
-            # 4️⃣ Enviar archivo NeoForge
-            if [ -n "$NEOFORGE_FILE" ] && [ -f "$NEOFORGE_FILE" ]; then
-              curl -s -X POST "$WEBHOOK" \
-                -F "file=@${NEOFORGE_FILE}"
-            fi
+            # 3️⃣ Enviar todos los JARs (incluyendo mod jars y -api.jar, excluyendo sources)
+            for FILE in release_libs/*.jar; do
+              if [ -f "$FILE" ] && [[ "$FILE" != *"-sources.jar" ]]; then
+                echo "Uploading $FILE to Discord..."
+                curl -s -X POST "$WEBHOOK" \
+                  -F "file=@${FILE}"
+              fi
+            done
           }
 
           send_discord "$DISCORD_COBBLEMON"
           send_discord "$DISCORD_ZONARY123"
-
-
+          if [ -n "$DISCORD_WEBHOOK_URL" ]; then
+            send_discord "$DISCORD_WEBHOOK_URL"
+          fi

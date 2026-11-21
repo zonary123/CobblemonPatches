@@ -10,10 +10,13 @@ import com.cobblemon.mod.common.api.events.CobblemonEvents;
 import com.cobblemon.mod.common.api.events.battles.BattleFledEvent;
 import com.cobblemon.mod.common.battles.actor.PlayerBattleActor;
 import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
+import com.cobblemon.mod.common.battles.runner.ShowdownService;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.activestate.ActivePokemonState;
 import com.cobblemon.mod.common.pokemon.activestate.InactivePokemonState;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import kotlin.Pair;
 import kotlin.Unit;
 import net.minecraft.ChatFormatting;
@@ -51,6 +54,71 @@ public abstract class PokemonBattleMixin {
 
   @Unique
   private int inactivityTicks = 0;
+
+  @Unique
+  private boolean stopping = false;
+
+  /**
+   * Guards {@link PokemonBattle#stop()} against duplicate or re-entrant stop calls on already ended battles.
+   *
+   * @param ci callback info
+   */
+  @Inject(method = "stop", at = @At("HEAD"), cancellable = true)
+  private void cobblemonPatches$guardStop(CallbackInfo ci) {
+    PokemonBattle self = (PokemonBattle) (Object) this;
+    if (self.getEnded() || this.stopping) {
+      ci.cancel();
+      return;
+    }
+    this.stopping = true;
+  }
+
+  /**
+   * Resets the stopping flag once {@link PokemonBattle#stop()} completes.
+   *
+   * @param ci callback info
+   */
+  @Inject(method = "stop", at = @At("RETURN"))
+  private void cobblemonPatches$finishStop(CallbackInfo ci) {
+    this.stopping = false;
+  }
+
+  /**
+   * Safely wraps Showdown message dispatch so that a missing or already-closed JS battle stream
+   * (GraalJS {@code TypeError: Cannot read property 'write' of undefined}) does not crash the server tick loop
+   * and still allows {@link PokemonBattle#end()} to clean up the battle state.
+   */
+  @WrapOperation(
+    method = "writeShowdownAction",
+    at = @At(
+      value = "INVOKE",
+      target = "Lcom/cobblemon/mod/common/battles/runner/ShowdownService;send(Ljava/util/UUID;[Ljava/lang/String;)V"
+    )
+  )
+  private void cobblemonPatches$safeWriteShowdownAction(
+    ShowdownService service,
+    UUID battleId,
+    String[] messages,
+    Operation<Void> original
+  ) {
+    PokemonBattle self = (PokemonBattle) (Object) this;
+    if (self.getEnded()) {
+      return;
+    }
+
+    try {
+      original.call(service, battleId, messages);
+    } catch (Exception e) {
+      Cobblemon.LOGGER.warn(
+        "Failed to send Showdown action for battle {} (battle stream missing or already closed): {}",
+        battleId,
+        e.getMessage()
+      );
+      if (!this.stopping && !self.getEnded()) {
+        self.end();
+      }
+    }
+  }
 
   /**
    * Safely discards and deactivates all battle Pokemon belonging to disconnected players upon battle termination.
