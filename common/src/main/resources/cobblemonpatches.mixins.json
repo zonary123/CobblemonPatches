@@ -52,6 +52,11 @@
     "cobblemon.storage.PCStoreMixin",
     "cobblemon.storage.PlayerPartyStoreMixin",
     "cobblemon.things.SentOutStateMixin",
+    "cobblemon.tms.FossilMultiblockEntityMixin",
+    "cobblemon.tms.SetActiveTMPacketHandlerMixin",
+    "cobblemon.tms.TMMachineBlockOpenMixin",
+    "cobblemon.tms.TMMoveManagerMixin",
+    "cobblemon.tms.TechnicalMachinesMixin",
     "exploits.dupe.TMMachineBlockMixin",
     "exploits.lag.SnowballEntityMixin",
     "scoreboard.ScoreboardMixin"

@@ -63,12 +63,14 @@ For a detailed technical breakdown of every patch, see [`FIXEDS.md`](FIXEDS.md).
   "debug": false,
   "battleInactivityTimeoutSeconds": 120,
   "battleInactivityTimeoutMessage": "&cBattle timed out due to inactivity.",
-  "autosaveStoresPerTick": 2
+  "autosaveStoresPerTick": 2,
+  "enableTMObtainMethodPatch": true
 }
 ```
 
 > [!NOTE]
 > Set `battleInactivityTimeoutSeconds` to `0` or `-1` to disable the battle inactivity timeout completely.
+> Set `enableTMObtainMethodPatch` to `false` to disable TM `obtainMethods` enforcement and dynamic passive TM syncing.
  
 ---
  

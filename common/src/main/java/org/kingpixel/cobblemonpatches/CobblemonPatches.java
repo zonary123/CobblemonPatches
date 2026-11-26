@@ -4,6 +4,7 @@ import dev.architectury.event.events.common.LifecycleEvent;
 import net.minecraft.server.MinecraftServer;
 import org.kingpixel.cobblemonpatches.config.ConfigManager;
 import org.kingpixel.cobblemonpatches.config.ModConfig;
+import org.kingpixel.cobblemonpatches.util.TMObtainMethodUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +52,7 @@ public class CobblemonPatches {
     LifecycleEvent.SERVER_STOPPED.register(minecraftServer -> {
       CobblemonPatches.server = null;
       OpsUtil.clear();
+      TMObtainMethodUtils.clearIndex();
     });
   }
 }

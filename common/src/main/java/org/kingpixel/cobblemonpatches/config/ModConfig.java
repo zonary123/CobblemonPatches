@@ -17,6 +17,8 @@ public class ModConfig {
 
   private int autosaveStoresPerTick = 2;
 
+  private boolean enableTMObtainMethodPatch = true;
+
   public ModConfig() {
     // Default constructor for GSON deserialization
   }

@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.9] - 26-11-2026
+
+### Optimizations & Performance
+
+- **Faster TM Unlock Syncing on Login & Evolution**: Replaced repeated full-catalog TM scans per Pokémon with instant move lookups, drastically reducing CPU and memory overhead when players with large PCs log in or evolve Pokémon, and ensuring zero extra work when opening TM Machines without dynamic conditional TMs.
+
+### Fixed
+
+- **TM Unlock Rules Enforcement**: Fixed an issue where restricted or custom Technical Machines (TMs) could still be unlocked automatically when catching, leveling up, or evolving Pokémon, or by placing TM discs into a Data Monitor.
+- **TM Conditions & Permissions Validation**: Fixed custom TM unlock requirements (such as permissions, advancements, Y-level, and custom conditions) not being properly checked when unlocking TMs via commands or selecting them in the TM Machine.
+- **Dynamic TM Machine Visibility**: Conditional TMs that depend on live player states (like permissions, biomes, or advancements) now refresh automatically when opening a TM Machine, appearing when requirements are met and hiding again when they are not—without permanently saving them to the player's unlocked list.
+
 ## [1.2.8] - 19-11-2026
 
 ### Bug Fixes & Stability
