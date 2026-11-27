@@ -44,6 +44,8 @@
     "cobblemon.spawning.FlooredSpawnablePositionCalculatorMixin",
     "cobblemon.spawning.HabitatBlockDetectorMixin",
     "cobblemon.spawning.SaccharineLogSlatheredDetectorMixin",
+    "cobblemon.spawning.SpawnablePositionMixin",
+    "cobblemon.spawning.SpawnerMixin",
     "cobblemon.spawning.SpawningZoneMixin",
     "cobblemon.spawning.SubmergedSpawnablePositionCalculatorMixin",
     "cobblemon.storage.CobblemonDataFixerCodecMixin",

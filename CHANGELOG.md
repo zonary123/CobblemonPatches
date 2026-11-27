@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.10] - 27-11-2026
+
+### Optimizations & Performance
+
+- **Idle Habitat Block CPU Savings**: Continuously active Habitat Blocks now skip expensive area spawning scans when no players are nearby, preventing Habitat Blocks in spawn chunks or force-loaded areas from consuming server CPU unnecessarily.
+- **Lighter Spawning Zone Generation**: Eliminated tens of thousands of temporary list, coordinate pair, and block data allocations during each spawning area scan for both Habitat Blocks and normal wild Pokémon spawning.
+- **Reduced Spawning Memory Pressure**: Deferred script runtime initialization on candidate spawn positions until actually needed and removed redundant list copies when copying active spawning influences, reducing garbage collection spikes during busy spawning passes.
+
 ## [1.2.9] - 26-11-2026
 
 ### Optimizations & Performance
