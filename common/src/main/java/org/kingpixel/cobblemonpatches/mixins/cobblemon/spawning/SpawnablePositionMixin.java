@@ -28,7 +28,10 @@ public abstract class SpawnablePositionMixin {
   private static final MoLangRuntime cobblemonPatches$SENTINEL_RUNTIME = new MoLangRuntime();
 
   @Unique
-  private static final QueryStruct cobblemonPatches$SENTINEL_STRUCT = new QueryStruct(new HashMap<>());
+  private static final HashMap<String, Function<MoParams, Object>> cobblemonPatches$SENTINEL_MAP = new HashMap<>(0);
+
+  @Unique
+  private static final QueryStruct cobblemonPatches$SENTINEL_STRUCT = new QueryStruct(cobblemonPatches$SENTINEL_MAP);
 
   @Unique
   private MoLangRuntime cobblemonPatches$lazyRuntime;
@@ -89,7 +92,7 @@ public abstract class SpawnablePositionMixin {
       )
   )
   private HashMap<String, Function<MoParams, Object>> cobblemonPatches$skipInitialStructMap() {
-    return null;
+    return cobblemonPatches$SENTINEL_MAP;
   }
 
   @Redirect(
