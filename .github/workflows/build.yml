@@ -2,7 +2,7 @@ name: Build, Discord & Modrinth Release
 
 on:
   push:
-    tags: [ "*" ]
+    tags: ["*"]
 
 env:
   DISCORD_COBBLEMON: ${{ secrets.DISCORD_COBBLEMON }}
@@ -99,7 +99,8 @@ jobs:
             [Alternate Current](<https://modrinth.com/mod/alternate-current>)
             [FerriteCore](<https://modrinth.com/mod/ferrite-core>)
             Protection mods:
-            [Panda Anti-Dupe](<https://modrinth.com/mod/pandaantidupe>)",
+            [Dupe Fix](<https://modrinth.com/mod/dupefix>)
+            [Anti-Exploit](<https://modrinth.com/mod/antiexploit>)",
           embeds:[{title:("Release "+$tag), description:$changelog,
           color:3066993}]}')
 
@@ -138,5 +139,3 @@ jobs:
 
           send_discord "$DISCORD_COBBLEMON"
           send_discord "$DISCORD_ZONARY123"
-
-
